@@ -61,7 +61,11 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				'safari-gold': 'hsl(var(--safari-gold))',
+				'safari-earth': 'hsl(var(--safari-earth))',
+				'safari-green': 'hsl(var(--safari-green))',
+				'safari-sunset': 'hsl(var(--safari-sunset))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
