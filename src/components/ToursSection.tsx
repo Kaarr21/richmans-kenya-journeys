@@ -1,53 +1,50 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, Users, Star, MapPin } from "lucide-react";
+import { MapPin, Camera } from "lucide-react";
 
 const ToursSection = () => {
-  const tours = [
+  const destinations = [
     {
       id: 1,
-      title: "Maasai Mara Big Five Safari",
-      description: "Experience Kenya's most famous wildlife reserve with the Big Five and the Great Migration.",
-      duration: "3-5 Days",
-      groupSize: "2-8 People",
-      price: "$450/day",
-      rating: 4.9,
-      features: ["Game Drives", "Maasai Culture", "Hot Air Balloon", "Luxury Camps"],
-      image: "safari-1"
+      title: "Maasai Mara National Reserve",
+      description: "Witness the Great Migration and the Big Five in Kenya's most famous wildlife reserve.",
+      location: "Narok County, Kenya",
+      image: "masai-mara"
     },
     {
       id: 2,
-      title: "Mount Kenya Hiking Adventure", 
-      description: "Conquer Africa's second-highest peak with breathtaking views and diverse ecosystems.",
-      duration: "4-7 Days",
-      groupSize: "2-6 People", 
-      price: "$320/day",
-      rating: 4.8,
-      features: ["Mountain Climbing", "Alpine Lakes", "Wildlife Spotting", "Local Guides"],
-      image: "mountain-1"
+      title: "Mount Kenya", 
+      description: "Africa's second-highest peak offering breathtaking alpine scenery and diverse ecosystems.",
+      location: "Central Kenya",
+      image: "mount-kenya"
     },
     {
       id: 3,
-      title: "Coastal Culture & Beaches",
-      description: "Discover the Swahili culture, pristine beaches, and historic sites of the Kenyan coast.",
-      duration: "2-4 Days",
-      groupSize: "2-10 People",
-      price: "$280/day", 
-      rating: 4.7,
-      features: ["Beach Relaxation", "Cultural Sites", "Snorkeling", "Local Cuisine"],
-      image: "coast-1"
+      title: "Diani Beach",
+      description: "Pristine white sand beaches and crystal-clear waters on Kenya's stunning coast.",
+      location: "Kwale County, Kenya",
+      image: "diani-beach"
     },
     {
       id: 4,
-      title: "Nairobi City & National Park",
-      description: "Urban safari experience with city highlights and unique wildlife encounters near the capital.",
-      duration: "1-2 Days", 
-      groupSize: "2-12 People",
-      price: "$180/day",
-      rating: 4.6,
-      features: ["City Tour", "Urban Wildlife", "Cultural Centers", "Local Markets"],
-      image: "city-1"
+      title: "Amboseli National Park",
+      description: "Famous for its large elephant herds with magnificent views of Mount Kilimanjaro.",
+      location: "Kajiado County, Kenya",
+      image: "amboseli"
+    },
+    {
+      id: 5,
+      title: "Lake Nakuru",
+      description: "Spectacular flamingo populations and diverse wildlife in the Great Rift Valley.",
+      location: "Nakuru County, Kenya",
+      image: "lake-nakuru"
+    },
+    {
+      id: 6,
+      title: "Tsavo National Parks",
+      description: "Kenya's largest national parks known for red elephants and diverse landscapes.",
+      location: "Coast Province, Kenya",
+      image: "tsavo"
     }
   ];
 
@@ -57,80 +54,41 @@ const ToursSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Popular{" "}
+            Explore{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-safari-sunset">
-              Safari Tours
+              Kenya's Destinations
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Carefully crafted experiences that showcase the best of Kenya's wildlife, 
-            culture, and natural beauty. Each tour is customizable to your preferences.
+            Discover the breathtaking destinations Richard has explored across Kenya. 
+            From wildlife safaris to mountain adventures and coastal escapes.
           </p>
         </div>
 
-        {/* Tours Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 mb-12">
-          {tours.map((tour) => (
-            <Card key={tour.id} className="group hover:shadow-xl transition-all duration-300 border-border/50 overflow-hidden">
-              <div className="aspect-[16/10] bg-gradient-to-br from-safari-earth to-safari-green relative overflow-hidden">
-                {/* Image placeholder - replace with actual tour images */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end justify-center p-6">
-                  <MapPin className="h-12 w-12 text-white/70" />
+        {/* Destinations Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {destinations.map((destination) => (
+            <Card key={destination.id} className="group hover:shadow-xl transition-all duration-300 border-border/50 overflow-hidden">
+              <div className="aspect-[4/3] bg-gradient-to-br from-safari-earth to-safari-green relative overflow-hidden">
+                {/* Image placeholder - replace with actual destination images */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                  <div className="text-white">
+                    <h3 className="font-bold text-lg mb-1">{destination.title}</h3>
+                    <div className="flex items-center text-sm opacity-90">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {destination.location}
+                    </div>
+                  </div>
                 </div>
-                <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">
-                  Best Seller
-                </Badge>
+                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2">
+                  <Camera className="h-5 w-5 text-white" />
+                </div>
               </div>
               
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                    {tour.title}
-                  </CardTitle>
-                  <div className="flex items-center space-x-1 text-safari-gold">
-                    <Star className="h-4 w-4 fill-current" />
-                    <span className="text-sm font-medium">{tour.rating}</span>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
+              <CardContent className="p-6">
                 <p className="text-muted-foreground leading-relaxed">
-                  {tour.description}
+                  {destination.description}
                 </p>
-                
-                <div className="flex flex-wrap gap-2">
-                  {tour.features.map((feature, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {feature}
-                    </Badge>
-                  ))}
-                </div>
-                
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{tour.duration}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-4 w-4" />
-                      <span>{tour.groupSize}</span>
-                    </div>
-                  </div>
-                  <div className="text-lg font-bold text-primary">
-                    {tour.price}
-                  </div>
-                </div>
-                
-                <div className="flex space-x-3 pt-2">
-                  <Button variant="outline" className="flex-1">
-                    Learn More
-                  </Button>
-                  <Button className="flex-1 bg-primary hover:bg-primary/90">
-                    Book Now
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           ))}
