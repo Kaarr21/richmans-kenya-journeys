@@ -1,52 +1,62 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Camera } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const ToursSection = () => {
-  const destinations = [
+  const [locations, setLocations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error: any) {
+      console.error('Error fetching locations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback destinations if no locations are uploaded yet
+  const fallbackDestinations = [
     {
-      id: 1,
+      id: "maasai-mara",
       title: "Maasai Mara National Reserve",
       description: "Witness the Great Migration and the Big Five in Kenya's most famous wildlife reserve.",
       location: "Narok County, Kenya",
-      image: "masai-mara"
+      image_url: null
     },
     {
-      id: 2,
+      id: "mount-kenya",
       title: "Mount Kenya", 
       description: "Africa's second-highest peak offering breathtaking alpine scenery and diverse ecosystems.",
       location: "Central Kenya",
-      image: "mount-kenya"
+      image_url: null
     },
     {
-      id: 3,
+      id: "diani-beach",
       title: "Diani Beach",
       description: "Pristine white sand beaches and crystal-clear waters on Kenya's stunning coast.",
       location: "Kwale County, Kenya",
-      image: "diani-beach"
-    },
-    {
-      id: 4,
-      title: "Amboseli National Park",
-      description: "Famous for its large elephant herds with magnificent views of Mount Kilimanjaro.",
-      location: "Kajiado County, Kenya",
-      image: "amboseli"
-    },
-    {
-      id: 5,
-      title: "Lake Nakuru",
-      description: "Spectacular flamingo populations and diverse wildlife in the Great Rift Valley.",
-      location: "Nakuru County, Kenya",
-      image: "lake-nakuru"
-    },
-    {
-      id: 6,
-      title: "Tsavo National Parks",
-      description: "Kenya's largest national parks known for red elephants and diverse landscapes.",
-      location: "Coast Province, Kenya",
-      image: "tsavo"
+      image_url: null
     }
   ];
+
+  const displayLocations = locations.length > 0 ? locations : fallbackDestinations;
 
   return (
     <section className="py-20 bg-background">
@@ -67,31 +77,54 @@ const ToursSection = () => {
 
         {/* Destinations Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {destinations.map((destination) => (
-            <Card key={destination.id} className="group hover:shadow-xl transition-all duration-300 border-border/50 overflow-hidden">
-              <div className="aspect-[4/3] bg-gradient-to-br from-safari-earth to-safari-green relative overflow-hidden">
-                {/* Image placeholder - replace with actual destination images */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
-                  <div className="text-white">
-                    <h3 className="font-bold text-lg mb-1">{destination.title}</h3>
-                    <div className="flex items-center text-sm opacity-90">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {destination.location}
+          {loading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <div className="aspect-[4/3] bg-muted animate-pulse" />
+                <CardContent className="p-6">
+                  <div className="h-4 bg-muted rounded animate-pulse mb-2" />
+                  <div className="h-3 bg-muted rounded animate-pulse" />
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            displayLocations.map((location) => (
+              <Card key={location.id} className="group hover:shadow-xl transition-all duration-300 border-border/50 overflow-hidden">
+                <div className="aspect-[4/3] relative overflow-hidden">
+                  {location.image_url ? (
+                    <img 
+                      src={location.image_url} 
+                      alt={location.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-safari-earth to-safari-green" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                    <div className="text-white">
+                      <h3 className="font-bold text-lg mb-1">{location.title}</h3>
+                      {location.location && (
+                        <div className="flex items-center text-sm opacity-90">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {location.location}
+                        </div>
+                      )}
                     </div>
                   </div>
+                  <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2">
+                    <Camera className="h-5 w-5 text-white" />
+                  </div>
                 </div>
-                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2">
-                  <Camera className="h-5 w-5 text-white" />
-                </div>
-              </div>
-              
-              <CardContent className="p-6">
-                <p className="text-muted-foreground leading-relaxed">
-                  {destination.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                
+                <CardContent className="p-6">
+                  <p className="text-muted-foreground leading-relaxed">
+                    {location.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
         {/* Call to Action */}
@@ -103,6 +136,7 @@ const ToursSection = () => {
             size="lg" 
             variant="outline"
             className="px-8 py-4 text-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            onClick={() => navigate('/book-tour')}
           >
             Request Custom Tour
           </Button>
