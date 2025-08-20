@@ -17,13 +17,17 @@ export type Database = {
       bookings: {
         Row: {
           amount: number | null
+          confirmed_date: string | null
+          confirmed_time: string | null
           created_at: string
           customer_email: string
           customer_name: string
           customer_phone: string | null
           destination: string
+          duration_days: number | null
           group_size: number
           id: string
+          notes: string | null
           preferred_date: string | null
           special_requests: string | null
           status: string | null
@@ -31,13 +35,17 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          confirmed_date?: string | null
+          confirmed_time?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
           customer_phone?: string | null
           destination: string
+          duration_days?: number | null
           group_size?: number
           id?: string
+          notes?: string | null
           preferred_date?: string | null
           special_requests?: string | null
           status?: string | null
@@ -45,17 +53,51 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          confirmed_date?: string | null
+          confirmed_time?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string | null
           destination?: string
+          duration_days?: number | null
           group_size?: number
           id?: string
+          notes?: string | null
           preferred_date?: string | null
           special_requests?: string | null
           status?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
