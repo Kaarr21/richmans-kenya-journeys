@@ -11,25 +11,9 @@ const ToursSection = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchLocations();
+    // Just show fallback destinations, locations go to gallery now
+    setLoading(false);
   }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(6);
-      
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error: any) {
-      console.error('Error fetching locations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Fallback destinations if no locations are uploaded yet
   const fallbackDestinations = [
@@ -56,7 +40,7 @@ const ToursSection = () => {
     }
   ];
 
-  const displayLocations = locations.length > 0 ? locations : fallbackDestinations;
+  const displayLocations = fallbackDestinations;
 
   return (
     <section className="py-20 bg-background">

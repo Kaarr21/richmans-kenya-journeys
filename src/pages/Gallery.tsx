@@ -1,46 +1,32 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Gallery = () => {
-  const galleryImages = [
-    {
-      id: 1,
-      title: "Maasai Mara Safari",
-      location: "Maasai Mara National Reserve",
-      image: "/placeholder.svg"
-    },
-    {
-      id: 2,
-      title: "Mount Kenya Adventure",
-      location: "Mount Kenya National Park",
-      image: "/placeholder.svg"
-    },
-    {
-      id: 3,
-      title: "Coastal Paradise",
-      location: "Diani Beach",
-      image: "/placeholder.svg"
-    },
-    {
-      id: 4,
-      title: "Lake Nakuru Wildlife",
-      location: "Lake Nakuru National Park",
-      image: "/placeholder.svg"
-    },
-    {
-      id: 5,
-      title: "Amboseli Elephants",
-      location: "Amboseli National Park",
-      image: "/placeholder.svg"
-    },
-    {
-      id: 6,
-      title: "Tsavo East Adventure",
-      location: "Tsavo East National Park",
-      image: "/placeholder.svg"
+  const [locations, setLocations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error: any) {
+      console.error('Error fetching locations:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   return (
     <div className="min-h-screen">
@@ -58,24 +44,42 @@ const Gallery = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {galleryImages.map((image) => (
-              <Card key={image.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-0">
-                  <div className="relative">
-                    <img
-                      src={image.image}
-                      alt={image.title}
-                      className="w-full h-64 object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-lg font-semibold">{image.title}</h3>
-                      <p className="text-sm opacity-90">{image.location}</p>
+            {loading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <div className="aspect-[4/3] bg-muted animate-pulse" />
+                  <CardContent className="p-6">
+                    <div className="h-4 bg-muted rounded animate-pulse mb-2" />
+                    <div className="h-3 bg-muted rounded animate-pulse" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : locations.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No photos uploaded yet. Check back soon!</p>
+              </div>
+            ) : (
+              locations.map((location) => (
+                <Card key={location.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <CardContent className="p-0">
+                    <div className="relative">
+                      <img
+                        src={location.image_url}
+                        alt={location.title}
+                        className="w-full h-64 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-4 left-4 text-white">
+                        <h3 className="text-lg font-semibold">{location.title}</h3>
+                        {location.description && (
+                          <p className="text-sm opacity-90">{location.description}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </main>

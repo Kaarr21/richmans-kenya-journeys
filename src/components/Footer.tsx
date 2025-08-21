@@ -1,4 +1,4 @@
-import { Sun, Phone, Mail, MapPin, Facebook, Twitter, Instagram } from "lucide-react";
+import { Sun, Phone, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -18,17 +18,6 @@ const Footer = () => {
               From thrilling safaris to cultural immersions, we create unforgettable 
               memories that last a lifetime.
             </p>
-            <div className="flex space-x-4">
-              <div className="p-2 bg-white/10 rounded-full hover:bg-primary transition-colors cursor-pointer">
-                <Facebook className="h-5 w-5" />
-              </div>
-              <div className="p-2 bg-white/10 rounded-full hover:bg-primary transition-colors cursor-pointer">
-                <Twitter className="h-5 w-5" />
-              </div>
-              <div className="p-2 bg-white/10 rounded-full hover:bg-primary transition-colors cursor-pointer">
-                <Instagram className="h-5 w-5" />
-              </div>
-            </div>
           </div>
 
           {/* Quick Links */}
@@ -62,14 +51,14 @@ const Footer = () => {
               <div className="flex items-start space-x-3">
                 <Phone className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <p className="text-white/90">+254 700 123 456</p>
+                  <p className="text-white/90">0720912561</p>
                   <p className="text-white/70 text-sm">Call or WhatsApp</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <Mail className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <p className="text-white/90">richard@richmantourskenya.com</p>
+                  <p className="text-white/90">richkaroki@gmail.com</p>
                   <p className="text-white/70 text-sm">Quick response</p>
                 </div>
               </div>

@@ -68,27 +68,6 @@ const AboutSection = () => {
               ))}
             </div>
 
-            <Button 
-              size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4"
-            >
-              Meet Richard
-            </Button>
-          </div>
-
-          {/* Image placeholder - you can replace with actual Richard's photo */}
-          <div className="relative">
-            <div className="aspect-[4/5] bg-gradient-to-br from-safari-earth to-safari-green rounded-2xl shadow-2xl flex items-center justify-center">
-              <div className="text-white text-center">
-                <Users className="h-24 w-24 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">Richard's Photo</p>
-                <p className="text-sm opacity-75">Your Trusted Guide</p>
-              </div>
-            </div>
-            
-            {/* Decorative elements */}
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/20 rounded-full blur-xl" />
-            <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-safari-sunset/20 rounded-full blur-xl" />
           </div>
         </div>
       </div>

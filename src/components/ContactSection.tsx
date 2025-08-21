@@ -10,13 +10,13 @@ const ContactSection = () => {
     {
       icon: <Phone className="h-5 w-5" />,
       title: "Phone",
-      details: ["+254 700 123 456", "+254 722 987 654"],
+      details: ["0720912561"],
       subtitle: "Call or WhatsApp anytime"
     },
     {
       icon: <Mail className="h-5 w-5" />,
       title: "Email", 
-      details: ["richard@richmantourskenya.com", "info@richmantourskenya.com"],
+      details: ["richkaroki@gmail.com"],
       subtitle: "Quick response guaranteed"
     },
     {
@@ -156,30 +156,6 @@ const ContactSection = () => {
               </Card>
             ))}
 
-            {/* Social Media / Quick Actions */}
-            <Card className="border-border/50 bg-gradient-to-br from-primary/5 to-safari-sunset/5">
-              <CardContent className="p-6 text-center">
-                <h3 className="font-semibold text-foreground mb-4">
-                  Quick Contact
-                </h3>
-                <div className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                  >
-                    <Phone className="mr-2 h-4 w-4" />
-                    Call Now
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="w-full border-safari-green text-safari-green hover:bg-safari-green hover:text-white"
-                  >
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    WhatsApp
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
