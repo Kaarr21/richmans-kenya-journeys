@@ -11,36 +11,26 @@ const ToursSection = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Just show fallback destinations, locations go to gallery now
-    setLoading(false);
+    fetchLocations();
   }, []);
 
-  // Fallback destinations if no locations are uploaded yet
-  const fallbackDestinations = [
-    {
-      id: "maasai-mara",
-      title: "Maasai Mara National Reserve",
-      description: "Witness the Great Migration and the Big Five in Kenya's most famous wildlife reserve.",
-      location: "Narok County, Kenya",
-      image_url: null
-    },
-    {
-      id: "mount-kenya",
-      title: "Mount Kenya", 
-      description: "Africa's second-highest peak offering breathtaking alpine scenery and diverse ecosystems.",
-      location: "Central Kenya",
-      image_url: null
-    },
-    {
-      id: "diani-beach",
-      title: "Diani Beach",
-      description: "Pristine white sand beaches and crystal-clear waters on Kenya's stunning coast.",
-      location: "Kwale County, Kenya",
-      image_url: null
+  const fetchLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error: any) {
+      console.error('Error fetching locations:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const displayLocations = fallbackDestinations;
+  const displayLocations = locations;
 
   return (
     <section className="py-20 bg-background">
@@ -72,6 +62,10 @@ const ToursSection = () => {
                 </CardContent>
               </Card>
             ))
+          ) : displayLocations.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">No destinations uploaded yet. Check back soon for amazing locations!</p>
+            </div>
           ) : (
             displayLocations.map((location) => (
               <Card key={location.id} className="group hover:shadow-xl transition-all duration-300 border-border/50 overflow-hidden">
