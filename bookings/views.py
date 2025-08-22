@@ -43,7 +43,7 @@ class BookingListCreateView(generics.ListCreateAPIView):
                 subject,
                 message,
                 settings.EMAIL_HOST_USER,
-                ['richkaroki@gmail.com'],  # replace with your admin email(s)
+                ['karokin35@gmail.com'],  # replace with your admin email(s)
                 fail_silently=False,
             )
         except Exception as e:

@@ -53,26 +53,14 @@ const AdminDashboard = () => {
   const checkAuth = useCallback(async () => {
     try {
       if (apiClient.isAuthenticated()) {
-        // If we have a token, try to fetch user profile
-        // You'll need to implement this endpoint in Django
-        const response = await fetch('/api/auth/profile/', {
-          headers: {
-            'Authorization': `Token ${apiClient.getToken()}`
-          }
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData.user);
-          await Promise.all([fetchBookings(), fetchLocations()]);
-        } else {
-          // Token is invalid, clear it
-          apiClient.clearToken();
-          setUser(null);
-        }
+        // Use the apiClient instead of direct fetch
+        const userData = await apiClient.getProfile();
+        setUser(userData.user);
+        await Promise.all([fetchBookings(), fetchLocations()]);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      // Token is invalid, clear it
       apiClient.clearToken();
       setUser(null);
     } finally {

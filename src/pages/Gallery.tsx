@@ -2,10 +2,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient, LocationResponse } from "@/lib/api";
 
 const Gallery = () => {
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<LocationResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,13 +14,8 @@ const Gallery = () => {
 
   const fetchLocations = async () => {
     try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setLocations(data || []);
+      const response = await apiClient.getLocations();
+      setLocations(response.results || []);
     } catch (error: any) {
       console.error('Error fetching locations:', error);
     } finally {

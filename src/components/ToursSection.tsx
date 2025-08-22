@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Camera } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient, LocationResponse } from "@/lib/api";
 
 const ToursSection = () => {
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<LocationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -16,13 +16,8 @@ const ToursSection = () => {
 
   const fetchLocations = async () => {
     try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setLocations(data || []);
+      const response = await apiClient.getLocations();
+      setLocations(response.results || []);
     } catch (error: any) {
       console.error('Error fetching locations:', error);
     } finally {
@@ -82,12 +77,6 @@ const ToursSection = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
                     <div className="text-white">
                       <h3 className="font-bold text-lg mb-1">{location.title}</h3>
-                      {location.location && (
-                        <div className="flex items-center text-sm opacity-90">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {location.location}
-                        </div>
-                      )}
                     </div>
                   </div>
                   <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2">
@@ -97,7 +86,7 @@ const ToursSection = () => {
                 
                 <CardContent className="p-6">
                   <p className="text-muted-foreground leading-relaxed">
-                    {location.description}
+                    {location.description || "Discover this amazing destination with Richard!"}
                   </p>
                 </CardContent>
               </Card>

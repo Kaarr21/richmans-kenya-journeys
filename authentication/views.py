@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from .serializers import LoginSerializer, UserSerializer
+from .serializers import LoginSerializer, UserSerializer, ProfileSerializer
 from .models import Profile
 
 
@@ -47,17 +47,13 @@ def logout_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])  # ✅ require authentication
+@permission_classes([IsAuthenticated])
 def user_profile(request):
     try:
-        profile = Profile.objects.get(user=request.user)
+        # Return user data directly for the profile endpoint
         return Response({
-            'user': UserSerializer(request.user).data,
-            'profile': {
-                'full_name': profile.full_name,
-                'phone': profile.phone,
-                'role': profile.role
-            }
+            'user': UserSerializer(request.user).data
         })
-    except Profile.DoesNotExist:
+    except Exception as e:
         return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
