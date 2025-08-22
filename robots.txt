@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Allow access to static assets
+Allow: /static/
+Allow: /media/
+Allow: /images/
+Allow: /css/
+Allow: /js/
+
+# Sitemap location
+Sitemap: https://richman-tours.com/sitemap.xml
+
+# Crawl delay (optional - be respectful to server resources)
+Crawl-delay: 1

@@ -1,4 +1,4 @@
-// src/lib/api.ts - Updated version
+// src/lib/api.ts - Fixed version with proper image handling
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // Define interfaces
@@ -53,8 +53,9 @@ export interface LocationImage {
 export interface LocationResponse extends LocationData {
   id: string;
   images: LocationImage[];
-  primary_image_url: string;
-  user_id: string;
+  primary_image_url?: string;
+  image_url?: string; // For backward compatibility
+  user_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -107,16 +108,31 @@ class ApiClient {
       ...options,
     };
 
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      const errorData: ApiErrorResponse = await response.json().catch(() => ({ 
-        error: `HTTP error! status: ${response.status}` 
-      }));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        let errorData: ApiErrorResponse;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `HTTP error! status: ${response.status}` };
+        }
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json() as Promise<T>;
+      }
+      
+      return {} as T; // For responses with no content
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error occurred');
     }
-    
-    return response.json() as Promise<T>;
   }
 
   // Auth methods
@@ -184,7 +200,15 @@ class ApiClient {
 
   // Location methods
   async getLocations(): Promise<{ results: LocationResponse[]; count: number }> {
-    return this.request<{ results: LocationResponse[]; count: number }>('/locations/');
+    const response = await this.request<{ results: LocationResponse[]; count: number }>('/locations/');
+    
+    // Ensure backward compatibility by setting image_url if not present
+    response.results = response.results.map(location => ({
+      ...location,
+      image_url: location.image_url || location.primary_image_url || '',
+    }));
+    
+    return response;
   }
 
   async createLocation(formData: FormData): Promise<LocationResponse> {
@@ -197,13 +221,22 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const errorData: ApiErrorResponse = await response.json().catch(() => ({ 
-        error: `HTTP error! status: ${response.status}` 
-      }));
+      let errorData: ApiErrorResponse;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { error: `HTTP error! status: ${response.status}` };
+      }
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
-    return response.json() as Promise<LocationResponse>;
+    const location = await response.json() as LocationResponse;
+    
+    // Ensure backward compatibility
+    return {
+      ...location,
+      image_url: location.image_url || location.primary_image_url || '',
+    };
   }
 
   async deleteLocation(id: string): Promise<void> {

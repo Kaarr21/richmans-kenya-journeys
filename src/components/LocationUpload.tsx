@@ -1,4 +1,4 @@
-// src/components/LocationUpload.tsx - Enhanced version
+// src/components/LocationUpload.tsx - Fixed version with better error handling
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,17 +37,33 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
     for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
       const file = files[i];
       if (file.type.startsWith('image/')) {
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: `${file.name} is too large. Maximum size is 5MB.`,
+            variant: "destructive"
+          });
+          continue;
+        }
+
         newImages.push({
           file,
           preview: URL.createObjectURL(file),
           caption: ""
+        });
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a valid image file.`,
+          variant: "destructive"
         });
       }
     }
 
     if (newImages.length + images.length > 5) {
       toast({
-        title: "Warning",
+        title: "Too many images",
         description: "Maximum 5 images allowed per location",
         variant: "destructive"
       });
@@ -55,6 +71,9 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
     }
 
     setImages(prev => [...prev, ...newImages]);
+    
+    // Clear the input
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -73,12 +92,22 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
   };
 
   const moveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= images.length) return;
+    
     setImages(prev => {
       const updated = [...prev];
       const [moved] = updated.splice(fromIndex, 1);
       updated.splice(toIndex, 0, moved);
       return updated;
     });
+  };
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    images.forEach(img => URL.revokeObjectURL(img.preview));
+    setImages([]);
+    setShowForm(false);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -112,13 +141,13 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
       }
 
       // Add images
-      images.forEach((img, index) => {
+      images.forEach((img) => {
         formData.append('images', img.file);
       });
 
-      // Add captions (only non-empty ones)
-      const captions = images.map(img => img.caption || '');
-      captions.forEach((caption, index) => {
+      // Add captions
+      const captions = images.map(img => img.caption.trim() || '');
+      captions.forEach((caption) => {
         formData.append('captions', caption);
       });
 
@@ -126,15 +155,11 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
 
       toast({
         title: "Success",
-        description: "Location added successfully!"
+        description: `Location "${title}" added successfully with ${images.length} image${images.length > 1 ? 's' : ''}!`
       });
 
-      // Reset form
-      setTitle("");
-      setDescription("");
-      images.forEach(img => URL.revokeObjectURL(img.preview));
-      setImages([]);
-      setShowForm(false);
+      // Reset form and notify parent
+      resetForm();
       onLocationAdded();
 
     } catch (error) {
@@ -172,13 +197,8 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              setShowForm(false);
-              setTitle("");
-              setDescription("");
-              images.forEach(img => URL.revokeObjectURL(img.preview));
-              setImages([]);
-            }}
+            onClick={resetForm}
+            type="button"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -194,6 +214,7 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Maasai Mara National Reserve"
               required
+              maxLength={255}
             />
           </div>
 
@@ -205,7 +226,11 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of this location..."
               rows={3}
+              maxLength={1000}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {description.length}/1000 characters
+            </p>
           </div>
 
           {/* Image Upload Section */}
@@ -218,18 +243,21 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
                   onChange={handleImageAdd}
                   className="hidden"
                   id="imageUpload"
                 />
                 <Label 
                   htmlFor="imageUpload"
-                  className="inline-flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+                  className="inline-flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors bg-gray-50 hover:bg-gray-100"
                 >
                   <ImageIcon className="h-5 w-5 mr-2" />
                   Add Photos ({images.length}/5)
                 </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Supported formats: JPEG, PNG, WebP. Max size: 5MB per image.
+                </p>
               </div>
             )}
 
@@ -237,18 +265,25 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
             {images.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {images.map((image, index) => (
-                  <div key={index} className="relative border rounded-lg p-3">
+                  <div key={index} className="relative border rounded-lg p-3 bg-gray-50">
                     <div className="relative aspect-video mb-2">
                       <img
                         src={image.preview}
                         alt={`Preview ${index + 1}`}
                         className="w-full h-full object-cover rounded"
+                        onError={() => {
+                          toast({
+                            title: "Image Error",
+                            description: "Failed to load image preview",
+                            variant: "destructive"
+                          });
+                        }}
                       />
                       <Button
                         type="button"
                         variant="destructive"
                         size="sm"
-                        className="absolute top-1 right-1"
+                        className="absolute top-1 right-1 h-8 w-8 p-0"
                         onClick={() => removeImage(index)}
                       >
                         <X className="h-3 w-3" />
@@ -257,7 +292,7 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
                     
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Photo {index + 1}</span>
+                        <span>Photo {index + 1} {index === 0 && '(Primary)'}</span>
                         <div className="flex gap-1">
                           {index > 0 && (
                             <Button
@@ -266,6 +301,7 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
                               size="sm"
                               onClick={() => moveImage(index, index - 1)}
                               className="h-6 w-6 p-0"
+                              title="Move left"
                             >
                               ←
                             </Button>
@@ -277,6 +313,7 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
                               size="sm"
                               onClick={() => moveImage(index, index + 1)}
                               className="h-6 w-6 p-0"
+                              title="Move right"
                             >
                               →
                             </Button>
@@ -288,6 +325,7 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
                         value={image.caption}
                         onChange={(e) => updateImageCaption(index, e.target.value)}
                         className="text-sm"
+                        maxLength={255}
                       />
                     </div>
                   </div>
@@ -297,7 +335,11 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
           </div>
 
           <div className="flex gap-2">
-            <Button type="submit" disabled={uploading || images.length === 0}>
+            <Button 
+              type="submit" 
+              disabled={uploading || images.length === 0 || !title.trim()}
+              className="flex-1"
+            >
               {uploading ? (
                 <>
                   <Upload className="h-4 w-4 mr-2 animate-spin" />
@@ -313,7 +355,8 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setShowForm(false)}
+              onClick={resetForm}
+              disabled={uploading}
             >
               Cancel
             </Button>

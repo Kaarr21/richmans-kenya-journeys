@@ -1,4 +1,4 @@
-# locations/serializers.py - Updated version
+# locations/serializers.py - Fixed version with proper image handling
 from rest_framework import serializers
 from .models import Location, LocationImage
 
@@ -15,25 +15,33 @@ class LocationImageSerializer(serializers.ModelSerializer):
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.image.url)
+            # Fallback if no request context
+            return obj.image.url if hasattr(obj.image, 'url') else None
         return None
 
 class LocationSerializer(serializers.ModelSerializer):
     images = LocationImageSerializer(many=True, read_only=True)
     primary_image_url = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()  # Add this for backward compatibility
     
     class Meta:
         model = Location
-        fields = ['id', 'title', 'description', 'images', 'primary_image_url', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'images', 'primary_image_url', 'image_url', 'created_at', 'updated_at']
         read_only_fields = ('id', 'created_at', 'updated_at')
     
     def get_primary_image_url(self, obj):
-        """Get the first/primary image URL for backwards compatibility"""
+        """Get the first/primary image URL"""
         first_image = obj.images.first()
         if first_image and first_image.image:
             request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(first_image.image.url)
+            return first_image.image.url if hasattr(first_image.image, 'url') else None
         return None
+    
+    def get_image_url(self, obj):
+        """Alias for primary_image_url for backward compatibility"""
+        return self.get_primary_image_url(obj)
 
 class LocationCreateSerializer(serializers.ModelSerializer):
     images = serializers.ListField(
@@ -65,4 +73,4 @@ class LocationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Number of captions must match number of images")
             
         return data
-    
+        

@@ -48,19 +48,18 @@ const AdminDashboard = () => {
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [locations, setLocations] = useState<LocationResponse[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [scheduleKey, setScheduleKey] = useState(0); // Key to force Schedule re-render
   const { toast } = useToast();
 
   const checkAuth = useCallback(async () => {
     try {
       if (apiClient.isAuthenticated()) {
-        // Use the apiClient instead of direct fetch
         const userData = await apiClient.getProfile();
         setUser(userData.user);
         await Promise.all([fetchBookings(), fetchLocations()]);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Token is invalid, clear it
       apiClient.clearToken();
       setUser(null);
     } finally {
@@ -100,6 +99,12 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleBookingUpdated = async () => {
+    await fetchBookings();
+    // Force Schedule component to re-render by updating its key
+    setScheduleKey(prev => prev + 1);
+  };
+
   const handleSignOut = async () => {
     try {
       await apiClient.logout();
@@ -109,7 +114,6 @@ const AdminDashboard = () => {
         description: "You have been signed out successfully."
       });
     } catch (error) {
-      // Even if the API call fails, clear local state
       apiClient.clearToken();
       setUser(null);
       toast({
@@ -120,6 +124,10 @@ const AdminDashboard = () => {
   };
 
   const deleteLocation = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this location? This action cannot be undone.')) {
+      return;
+    }
+
     try {
       await apiClient.deleteLocation(id);
       await fetchLocations();
@@ -145,6 +153,8 @@ const AdminDashboard = () => {
         return "bg-yellow-100 text-yellow-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -173,11 +183,11 @@ const AdminDashboard = () => {
       color: "text-green-600"
     },
     {
-      title: "Customer Rating",
-      value: "4.9",
-      change: "+0.2",
-      icon: Star,
-      color: "text-yellow-600"
+      title: "Locations",
+      value: locations.length.toString(),
+      change: "+2",
+      icon: Camera,
+      color: "text-purple-600"
     }
   ];
 
@@ -250,7 +260,7 @@ const AdminDashboard = () => {
                       </Badge>
                       <BookingManager 
                         booking={booking} 
-                        onBookingUpdated={fetchBookings}
+                        onBookingUpdated={handleBookingUpdated}
                       />
                     </div>
                   </div>
@@ -272,32 +282,49 @@ const AdminDashboard = () => {
                 <CardTitle className="flex items-center space-x-2">
                   <Camera className="h-5 w-5" />
                   <span>Location Gallery</span>
+                  <Badge variant="outline">{locations.length} locations</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {locations.map((location) => (
-                    <div key={location.id} className="relative group">
-                      <img 
-                        src={location.image_url} 
-                        alt={location.title}
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded-lg flex items-center justify-center">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => deleteLocation(location.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="mt-2">
-                        <h3 className="font-semibold text-foreground">{location.title}</h3>
-                        {location.description && (
-                          <p className="text-sm text-muted-foreground">{location.description}</p>
+                    <div key={location.id} className="relative group border rounded-lg overflow-hidden">
+                      <div className="aspect-video relative">
+                        {location.image_url ? (
+                          <img 
+                            src={location.image_url} 
+                            alt={location.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/placeholder-image.jpg'; // fallback
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                            <Camera className="h-12 w-12 text-gray-400" />
+                          </div>
                         )}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => deleteLocation(location.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-foreground mb-1">{location.title}</h3>
+                        {location.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{location.description}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {location.images?.length || 0} image{location.images?.length !== 1 ? 's' : ''}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -313,7 +340,7 @@ const AdminDashboard = () => {
         );
       
       case 'schedule':
-        return <Schedule />;
+        return <Schedule key={scheduleKey} />;
       
       default:
         return null;
