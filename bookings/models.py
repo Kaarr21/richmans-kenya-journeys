@@ -1,4 +1,4 @@
-# Create your models here.
+# bookings/models.py - Enhanced version
 from django.db import models
 import uuid
 from django.contrib.auth.models import User
@@ -24,12 +24,18 @@ class Booking(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     special_requests = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    admin_message = models.TextField(blank=True, help_text="Message from Richard to customer")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Email tracking
+    customer_notified = models.BooleanField(default=False, help_text="Whether customer has been notified of status")
+    last_notification_sent = models.DateTimeField(blank=True, null=True)
     
     class Meta:
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.customer_name} - {self.destination}"
+        return f"{self.customer_name} - {self.destination} ({self.status})"
+        

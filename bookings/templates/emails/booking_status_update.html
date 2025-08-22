@@ -1,0 +1,97 @@
+<!-- booking_status_update.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Booking Update - Richman Travel & Tours</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .status-confirmed { background: #dcfce7; border: 1px solid #16a34a; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .status-cancelled { background: #fef2f2; border: 1px solid #dc2626; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .booking-details { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .message-box { background: #eff6ff; border: 1px solid #2563eb; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .footer { background: #6b7280; color: white; padding: 15px; text-align: center; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 Richman Travel & Tours</h1>
+        <h2>Booking Update</h2>
+    </div>
+    
+    <div class="content">
+        <p>Dear {{ customer_name }},</p>
+        
+        {% if status == 'confirmed' %}
+        <div class="status-confirmed">
+            <h3>✅ {{ status_message }}</h3>
+            <p>Great news! Your Kenya adventure is confirmed and ready to go.</p>
+        </div>
+        {% elif status == 'cancelled' %}
+        <div class="status-cancelled">
+            <h3>❌ {{ status_message }}</h3>
+            <p>We're sorry that your booking has been cancelled. Please contact us if you'd like to reschedule.</p>
+        </div>
+        {% else %}
+        <div class="booking-details">
+            <h3>📋 {{ status_message }}</h3>
+        </div>
+        {% endif %}
+        
+        <div class="booking-details">
+            <h3>Booking Details:</h3>
+            <p><strong>Booking ID:</strong> #{{ booking_id }}</p>
+            <p><strong>Destination:</strong> {{ destination }}</p>
+            
+            {% if status == 'confirmed' and confirmed_date %}
+            <p><strong>Confirmed Date:</strong> {{ confirmed_date }}</p>
+            {% if confirmed_time %}
+            <p><strong>Time:</strong> {{ confirmed_time }}</p>
+            {% endif %}
+            {% if duration_days %}
+            <p><strong>Duration:</strong> {{ duration_days }} day{{ duration_days|pluralize }}</p>
+            {% endif %}
+            {% if amount %}
+            <p><strong>Total Amount:</strong> ${{ amount }}</p>
+            {% endif %}
+            {% endif %}
+        </div>
+        
+        {% if admin_message %}
+        <div class="message-box">
+            <h3>💬 Message from Richard:</h3>
+            <p>{{ admin_message }}</p>
+        </div>
+        {% endif %}
+        
+        {% if status == 'confirmed' %}
+        <p><strong>What to expect:</strong></p>
+        <ul>
+            <li>Richard will contact you 2-3 days before your tour</li>
+            <li>Pick-up details and final itinerary will be shared</li>
+            <li>Bring comfortable clothing and your sense of adventure!</li>
+            <li>Don't forget your camera for amazing photos</li>
+        </ul>
+        {% endif %}
+        
+        <p>If you have any questions, please don't hesitate to contact Richard:</p>
+        <p>📞 Phone/WhatsApp: {{ richard_phone }}<br>
+           📧 Email: {{ richard_email }}</p>
+        
+        {% if status == 'confirmed' %}
+        <p>We're excited to share Kenya's beauty with you!</p>
+        {% elif status == 'cancelled' %}
+        <p>We hope to welcome you on a future adventure.</p>
+        {% endif %}
+        
+        <p>Best regards,<br>
+           <strong>Richard Karoki</strong><br>
+           Richman Travel & Tours</p>
+    </div>
+    
+    <div class="footer">
+        <p>Richman Travel & Tours | Nairobi, Kenya | {{ richard_email }} | {{ richard_phone }}</p>
+    </div>
+</body>
+</html>

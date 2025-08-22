@@ -1,4 +1,4 @@
-// src/lib/api.ts
+// src/lib/api.ts - Updated version
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // Define interfaces
@@ -19,9 +19,23 @@ export interface BookingResponse extends BookingData {
   duration_days?: number;
   amount?: number;
   notes?: string;
+  admin_message?: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   created_at: string;
   updated_at: string;
+  customer_notified?: boolean;
+  last_notification_sent?: string;
+}
+
+export interface BookingUpdateData {
+  status?: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  confirmed_date?: string;
+  confirmed_time?: string;
+  duration_days?: number;
+  amount?: number;
+  notes?: string;
+  admin_message?: string;
+  send_notification?: boolean;
 }
 
 export interface LocationData {
@@ -29,9 +43,17 @@ export interface LocationData {
   description?: string;
 }
 
-export interface LocationResponse extends LocationData {
+export interface LocationImage {
   id: string;
   image_url: string;
+  caption: string;
+  order: number;
+}
+
+export interface LocationResponse extends LocationData {
+  id: string;
+  images: LocationImage[];
+  primary_image_url: string;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -51,6 +73,15 @@ export interface AuthResponse {
     first_name: string;
     last_name: string;
   };
+}
+
+export interface BookingStatistics {
+  total_bookings: number;
+  pending_bookings: number;
+  confirmed_bookings: number;
+  completed_bookings: number;
+  cancelled_bookings: number;
+  recent_bookings: number;
 }
 
 export interface ApiErrorResponse {
@@ -128,7 +159,7 @@ class ApiClient {
     return this.request<{ results: BookingResponse[]; count: number }>('/bookings/');
   }
 
-  async updateBooking(id: string, data: Partial<BookingResponse>): Promise<BookingResponse> {
+  async updateBooking(id: string, data: BookingUpdateData): Promise<BookingResponse> {
     return this.request<BookingResponse>(`/bookings/${id}/`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -139,6 +170,16 @@ class ApiClient {
     return this.request<void>(`/bookings/${id}/`, { 
       method: 'DELETE' 
     });
+  }
+
+  async sendBookingNotification(id: string): Promise<{ message: string; customer_email: string }> {
+    return this.request<{ message: string; customer_email: string }>(`/bookings/${id}/send-notification/`, {
+      method: 'POST',
+    });
+  }
+
+  async getBookingStatistics(): Promise<BookingStatistics> {
+    return this.request<BookingStatistics>('/bookings/statistics/');
   }
 
   // Location methods
