@@ -4,9 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { apiClient } from "@/lib/api";
 
 interface AuthPageProps {
   onAuthSuccess?: () => void;
@@ -18,39 +16,26 @@ const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        onAuthSuccess?.();
-      }
-    };
-    checkUser();
-  }, [onAuthSuccess]);
-
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      const response = await apiClient.login(email, password);
 
       toast({
         title: "Success",
         description: "Logged in successfully!",
       });
 
-      onAuthSuccess?.();
-    } catch (error: any) {
+      if (onAuthSuccess) {
+        onAuthSuccess();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -100,7 +85,6 @@ const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
               {loading ? "Please wait..." : "Sign In"}
             </Button>
           </form>
-          
         </CardContent>
       </Card>
     </div>

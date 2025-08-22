@@ -8,10 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient, BookingData } from "@/lib/api";
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  destination: string;
+  groupSize: string;
+  preferredDate: string;
+  specialRequests: string;
+}
 
 const BookTour = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
     email: "",
@@ -29,11 +40,11 @@ const BookTour = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name: string, value: string) => {
+  const handleSelectChange = (name: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.destination || !formData.groupSize) {
@@ -50,38 +61,18 @@ const BookTour = () => {
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`;
       
+      const bookingData: BookingData = {
+        customer_name: fullName,
+        customer_email: formData.email,
+        customer_phone: formData.phone || undefined,
+        destination: formData.destination,
+        group_size: parseInt(formData.groupSize) || 1,
+        preferred_date: formData.preferredDate || undefined,
+        special_requests: formData.specialRequests || undefined
+      };
+
       // Save booking to database
-      const { error: dbError } = await supabase
-        .from('bookings')
-        .insert([{
-          customer_name: fullName,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          destination: formData.destination,
-          group_size: parseInt(formData.groupSize) || 1,
-          preferred_date: formData.preferredDate || null,
-          special_requests: formData.specialRequests
-        }]);
-
-      if (dbError) throw dbError;
-
-      // Send email notification
-      const { error: emailError } = await supabase.functions.invoke('send-booking-email', {
-        body: {
-          customerName: fullName,
-          customerEmail: formData.email,
-          customerPhone: formData.phone,
-          destination: formData.destination,
-          groupSize: parseInt(formData.groupSize) || 1,
-          preferredDate: formData.preferredDate,
-          specialRequests: formData.specialRequests
-        }
-      });
-
-      if (emailError) {
-        console.error('Email error:', emailError);
-        // Don't throw error here as booking was saved successfully
-      }
+      await apiClient.createBooking(bookingData);
 
       toast({
         title: "Booking Submitted!",
@@ -100,11 +91,12 @@ const BookTour = () => {
         specialRequests: ""
       });
 
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Booking error:', error);
       toast({
         title: "Error",
-        description: "Failed to submit booking request. Please try again.",
+        description: `Failed to submit booking request: ${errorMessage}`,
         variant: "destructive"
       });
     } finally {
@@ -196,7 +188,10 @@ const BookTour = () => {
                   </div>
                   <div>
                     <Label htmlFor="groupSize">Group Size *</Label>
-                    <Select value={formData.groupSize} onValueChange={(value) => handleSelectChange('groupSize', value)}>
+                    <Select 
+                      value={formData.groupSize} 
+                      onValueChange={(value) => handleSelectChange('groupSize', value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select group size" />
                       </SelectTrigger>

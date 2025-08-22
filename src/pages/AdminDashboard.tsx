@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AuthPage from "@/components/AuthPage";
 import Header from "@/components/Header";
@@ -23,101 +22,134 @@ import {
   Camera,
   Trash2
 } from "lucide-react";
+import { apiClient, BookingResponse, LocationResponse } from "@/lib/api";
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
+interface StatItem {
+  title: string;
+  value: string;
+  change: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
+
+type TabType = 'overview' | 'bookings' | 'locations' | 'schedule';
 
 const AdminDashboard = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [locations, setLocations] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'locations' | 'schedule'>('overview');
+  const [bookings, setBookings] = useState<BookingResponse[]>([]);
+  const [locations, setLocations] = useState<LocationResponse[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
+
+  const checkAuth = useCallback(async () => {
+    try {
+      if (apiClient.isAuthenticated()) {
+        // If we have a token, try to fetch user profile
+        // You'll need to implement this endpoint in Django
+        const response = await fetch('/api/auth/profile/', {
+          headers: {
+            'Authorization': `Token ${apiClient.getToken()}`
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData.user);
+          await Promise.all([fetchBookings(), fetchLocations()]);
+        } else {
+          // Token is invalid, clear it
+          apiClient.clearToken();
+          setUser(null);
+        }
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      apiClient.clearToken();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     checkAuth();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchBookings();
-          fetchLocations();
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user ?? null);
-    if (session?.user) {
-      await fetchBookings();
-      await fetchLocations();
-    }
-    setLoading(false);
-  };
+  }, [checkAuth]);
 
   const fetchBookings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setBookings(data || []);
-    } catch (error: any) {
+      const response = await apiClient.getBookings();
+      setBookings(response.results || []);
+    } catch (error) {
       console.error('Error fetching bookings:', error);
-    }
-  };
-
-  const fetchLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error: any) {
-      console.error('Error fetching locations:', error);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully."
-    });
-  };
-
-  const deleteLocation = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('locations')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      await fetchLocations();
-      toast({
-        title: "Success",
-        description: "Location deleted successfully"
-      });
-    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to delete location",
+        description: "Failed to fetch bookings",
         variant: "destructive"
       });
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const fetchLocations = async () => {
+    try {
+      const response = await apiClient.getLocations();
+      setLocations(response.results || []);
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch locations",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await apiClient.logout();
+      setUser(null);
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully."
+      });
+    } catch (error) {
+      // Even if the API call fails, clear local state
+      apiClient.clearToken();
+      setUser(null);
+      toast({
+        title: "Signed out",
+        description: "You have been signed out."
+      });
+    }
+  };
+
+  const deleteLocation = async (id: string) => {
+    try {
+      await apiClient.deleteLocation(id);
+      await fetchLocations();
+      toast({
+        title: "Success",
+        description: "Location deleted successfully"
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast({
+        title: "Error",
+        description: `Failed to delete location: ${errorMessage}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case "confirmed":
         return "bg-green-100 text-green-800";
@@ -129,6 +161,37 @@ const AdminDashboard = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const stats: StatItem[] = [
+    {
+      title: "Total Bookings",
+      value: bookings.length.toString(),
+      change: "+12%",
+      icon: Calendar,
+      color: "text-blue-600"
+    },
+    {
+      title: "Pending Bookings",
+      value: bookings.filter(b => b.status === 'pending').length.toString(),
+      change: "New",
+      icon: MapPin,
+      color: "text-orange-600"
+    },
+    {
+      title: "Confirmed Bookings",
+      value: bookings.filter(b => b.status === 'confirmed').length.toString(),
+      change: "+18%",
+      icon: DollarSign,
+      color: "text-green-600"
+    },
+    {
+      title: "Customer Rating",
+      value: "4.9",
+      change: "+0.2",
+      icon: Star,
+      color: "text-yellow-600"
+    }
+  ];
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -154,6 +217,7 @@ const AdminDashboard = () => {
             ))}
           </div>
         );
+      
       case 'bookings':
         return (
           <Card>
@@ -210,6 +274,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         );
+      
       case 'locations':
         return (
           <div className="space-y-6">
@@ -258,51 +323,29 @@ const AdminDashboard = () => {
             </Card>
           </div>
         );
+      
       case 'schedule':
         return <Schedule />;
+      
       default:
         return null;
     }
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
-    return <AuthPage onAuthSuccess={() => setUser(true)} />;
+    return <AuthPage onAuthSuccess={checkAuth} />;
   }
-
-  const stats = [
-    {
-      title: "Total Bookings",
-      value: bookings.length.toString(),
-      change: "+12%",
-      icon: Calendar,
-      color: "text-blue-600"
-    },
-    {
-      title: "Pending Bookings",
-      value: bookings.filter(b => b.status === 'pending').length.toString(),
-      change: "New",
-      icon: MapPin,
-      color: "text-orange-600"
-    },
-    {
-      title: "Confirmed Bookings",
-      value: bookings.filter(b => b.status === 'confirmed').length.toString(),
-      change: "+18%",
-      icon: DollarSign,
-      color: "text-green-600"
-    },
-    {
-      title: "Customer Rating",
-      value: "4.9",
-      change: "+0.2",
-      icon: Star,
-      color: "text-yellow-600"
-    }
-  ];
 
   return (
     <div className="min-h-screen">
@@ -312,7 +355,9 @@ const AdminDashboard = () => {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back, Richard! Here's your business overview.</p>
+              <p className="text-muted-foreground">
+                Welcome back, {user.first_name || user.username}! Here's your business overview.
+              </p>
             </div>
             <Button onClick={handleSignOut} variant="outline">
               <LogOut className="h-4 w-4 mr-2" />
@@ -323,15 +368,15 @@ const AdminDashboard = () => {
           {/* Navigation Tabs */}
           <div className="flex space-x-1 mb-8 bg-muted p-1 rounded-lg">
             {[
-              { key: 'overview', label: 'Overview', icon: TrendingUp },
-              { key: 'bookings', label: 'Bookings', icon: Calendar },
-              { key: 'locations', label: 'Locations', icon: Camera },
-              { key: 'schedule', label: 'Schedule', icon: MapPin }
+              { key: 'overview' as const, label: 'Overview', icon: TrendingUp },
+              { key: 'bookings' as const, label: 'Bookings', icon: Calendar },
+              { key: 'locations' as const, label: 'Locations', icon: Camera },
+              { key: 'schedule' as const, label: 'Schedule', icon: MapPin }
             ].map((tab) => (
               <Button
                 key={tab.key}
                 variant={activeTab === tab.key ? "default" : "ghost"}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key)}
                 className="flex items-center space-x-2"
               >
                 <tab.icon className="h-4 w-4" />
