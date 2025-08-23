@@ -21,7 +21,7 @@ const Header = () => {
           <Link to="/" className="flex items-center space-x-2">
             <Sun className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold text-foreground">
-              Richman Travel & Tours
+              Richman Tours & Travel
             </span>
           </Link>
 
@@ -38,12 +38,7 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Contact Button */}
-          <div className="hidden md:block">
-            <Button variant="default" className="bg-primary hover:bg-primary/90">
-              Contact Richard
-            </Button>
-          </div>
+          
 
           {/* Mobile menu button */}
           <div className="md:hidden">
@@ -71,11 +66,7 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
-              <div className="px-3 py-2">
-                <Button variant="default" className="w-full bg-primary hover:bg-primary/90">
-                  Contact Richard
-                </Button>
-              </div>
+              
             </div>
           </div>
         )}

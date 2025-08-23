@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <Sun className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold">Richman Travel & Tours</span>
+              <span className="text-2xl font-bold">Richman Tours & Travel</span>
             </div>
             <p className="text-white/80 mb-6 leading-relaxed">
               Experience the authentic beauty of Kenya with a trusted local guide. 
@@ -26,8 +26,6 @@ const Footer = () => {
             <ul className="space-y-2">
               {[
                 "Home",
-                "About Richard", 
-                "Safari Tours",
                 "Gallery",
                 "Book a Tour",
                 "Contact"
@@ -76,7 +74,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-white/20 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-white/70 text-sm">
-            © {currentYear} Richman Travel & Tours. All rights reserved.
+            © {currentYear} Richman Tours & Travel. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-white/70 hover:text-primary text-sm transition-colors">

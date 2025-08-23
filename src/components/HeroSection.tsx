@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
-import heroImage from "@/assets/hero-safari.jpg";
+import heroImage from "/home/karoki/Documents/Masai_Mara_at_Sunset.jpg";
 
 const HeroSection = () => {
   return (
