@@ -1,3 +1,4 @@
+// src/pages/AdminDashboard.tsx - Add tours tab and management
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import Footer from "@/components/Footer";
 import LocationUpload from "@/components/LocationUpload";
 import BookingManager from "@/components/BookingManager";
 import Schedule from "@/components/Schedule";
+import TourManager from "@/components/TourManager"; // Import the new component
 import { 
   Users, 
   Calendar, 
@@ -20,9 +22,10 @@ import {
   TrendingUp,
   LogOut,
   Camera,
-  Trash2
+  Trash2,
+  CalendarDays // Add this import
 } from "lucide-react";
-import { apiClient, BookingResponse, LocationResponse } from "@/lib/api";
+import { apiClient, BookingResponse, LocationResponse, TourResponse } from "@/lib/api";
 
 interface User {
   id: number;
@@ -40,15 +43,17 @@ interface StatItem {
   color: string;
 }
 
-type TabType = 'overview' | 'bookings' | 'locations' | 'schedule';
+// Update the tab type to include tours
+type TabType = 'overview' | 'bookings' | 'locations' | 'schedule' | 'tours';
 
 const AdminDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [locations, setLocations] = useState<LocationResponse[]>([]);
+  const [tours, setTours] = useState<TourResponse[]>([]); // Add tours state
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [scheduleKey, setScheduleKey] = useState(0); // Key to force Schedule re-render
+  const [scheduleKey, setScheduleKey] = useState(0);
   const { toast } = useToast();
 
   const checkAuth = useCallback(async () => {
@@ -56,7 +61,7 @@ const AdminDashboard = () => {
       if (apiClient.isAuthenticated()) {
         const userData = await apiClient.getProfile();
         setUser(userData.user);
-        await Promise.all([fetchBookings(), fetchLocations()]);
+        await Promise.all([fetchBookings(), fetchLocations(), fetchTours()]);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -99,9 +104,23 @@ const AdminDashboard = () => {
     }
   };
 
+  // Add fetchTours function
+  const fetchTours = async () => {
+    try {
+      const response = await apiClient.getTours();
+      setTours(response.results || []);
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch tours",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleBookingUpdated = async () => {
     await fetchBookings();
-    // Force Schedule component to re-render by updating its key
     setScheduleKey(prev => prev + 1);
   };
 
@@ -160,6 +179,7 @@ const AdminDashboard = () => {
     }
   };
 
+  // Update stats to include tours
   const stats: StatItem[] = [
     {
       title: "Total Bookings",
@@ -176,10 +196,10 @@ const AdminDashboard = () => {
       color: "text-orange-600"
     },
     {
-      title: "Confirmed Bookings",
-      value: bookings.filter(b => b.status === 'confirmed').length.toString(),
-      change: "+18%",
-      icon: DollarSign,
+      title: "Active Tours",
+      value: tours.filter(t => t.status === 'scheduled' || t.status === 'active').length.toString(),
+      change: "+3",
+      icon: CalendarDays,
       color: "text-green-600"
     },
     {
@@ -297,7 +317,7 @@ const AdminDashboard = () => {
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = '/placeholder-image.jpg'; // fallback
+                              target.src = '/placeholder-image.jpg';
                             }}
                           />
                         ) : (
@@ -342,6 +362,9 @@ const AdminDashboard = () => {
       case 'schedule':
         return <Schedule key={scheduleKey} />;
       
+      case 'tours':
+        return <TourManager apiClient={apiClient} />;
+      
       default:
         return null;
     }
@@ -380,11 +403,12 @@ const AdminDashboard = () => {
             </Button>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex space-x-1 mb-8 bg-muted p-1 rounded-lg">
+          {/* Navigation Tabs - Updated to include tours */}
+          <div className="flex space-x-1 mb-8 bg-muted p-1 rounded-lg overflow-x-auto">
             {[
               { key: 'overview' as const, label: 'Overview', icon: TrendingUp },
               { key: 'bookings' as const, label: 'Bookings', icon: Calendar },
+              { key: 'tours' as const, label: 'Tours', icon: CalendarDays },
               { key: 'locations' as const, label: 'Locations', icon: Camera },
               { key: 'schedule' as const, label: 'Schedule', icon: MapPin }
             ].map((tab) => (
@@ -392,7 +416,7 @@ const AdminDashboard = () => {
                 key={tab.key}
                 variant={activeTab === tab.key ? "default" : "ghost"}
                 onClick={() => setActiveTab(tab.key)}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 whitespace-nowrap"
               >
                 <tab.icon className="h-4 w-4" />
                 <span>{tab.label}</span>

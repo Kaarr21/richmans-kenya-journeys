@@ -1,4 +1,4 @@
-// src/components/BookingManager.tsx - Enhanced version
+// src/components/BookingManager.tsx - Enhanced version with preferred date display
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Edit, Calendar, Clock, Users, MapPin, DollarSign, MessageSquare, Send } from "lucide-react";
+import { Edit, Calendar, Clock, Users, MapPin, DollarSign, MessageSquare, Send, CalendarCheck } from "lucide-react";
 import { apiClient, BookingResponse } from "@/lib/api";
 
 interface BookingManagerProps {
@@ -118,6 +118,16 @@ const BookingManager = ({ booking, onBookingUpdated }: BookingManagerProps) => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not specified';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -126,7 +136,7 @@ const BookingManager = ({ booking, onBookingUpdated }: BookingManagerProps) => {
           Manage
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Manage Booking</span>
@@ -139,32 +149,59 @@ const BookingManager = ({ booking, onBookingUpdated }: BookingManagerProps) => {
         <div className="space-y-6">
           {/* Customer Info */}
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold mb-2">Customer Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              <p><strong>Name:</strong> {booking.customer_name}</p>
-              <p><strong>Email:</strong> {booking.customer_email}</p>
-              <p><strong>Phone:</strong> {booking.customer_phone || 'Not provided'}</p>
-              <p><strong>Group Size:</strong> {booking.group_size} people</p>
+            <h3 className="font-semibold mb-3">Customer Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <p><strong>Name:</strong> {booking.customer_name}</p>
+                <p><strong>Email:</strong> {booking.customer_email}</p>
+                <p><strong>Phone:</strong> {booking.customer_phone || 'Not provided'}</p>
+              </div>
+              <div className="space-y-2">
+                <p><strong>Group Size:</strong> {booking.group_size} people</p>
+                <p><strong>Destination:</strong> {booking.destination}</p>
+                <p><strong>Booking Date:</strong> {new Date(booking.created_at).toLocaleDateString()}</p>
+              </div>
             </div>
-            <div className="mt-2">
-              <p><strong>Destination:</strong> {booking.destination}</p>
-              {booking.special_requests && (
+            
+            {/* Preferred Date Section */}
+            {booking.preferred_date && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-2 text-blue-800">
+                  <CalendarCheck className="h-4 w-4" />
+                  <strong>Customer's Preferred Date:</strong>
+                  <span className="font-medium">{formatDate(booking.preferred_date)}</span>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  This is the date the customer originally requested
+                </p>
+              </div>
+            )}
+            
+            {booking.special_requests && (
+              <div className="mt-3">
                 <p><strong>Special Requests:</strong> {booking.special_requests}</p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Booking Details Form */}
           <div className="space-y-4">
+            <h3 className="font-semibold">Tour Details</h3>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="confirmedDate">Confirmed Date</Label>
+                <Label htmlFor="confirmedDate">Confirmed Date *</Label>
                 <Input
                   id="confirmedDate"
                   type="date"
                   value={confirmedDate}
                   onChange={(e) => setConfirmedDate(e.target.value)}
                 />
+                {booking.preferred_date && confirmedDate !== booking.preferred_date && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Different from preferred date ({formatDate(booking.preferred_date)})
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="confirmedTime">Confirmed Time</Label>
