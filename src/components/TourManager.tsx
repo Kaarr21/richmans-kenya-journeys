@@ -342,24 +342,33 @@ const TourManager = ({ apiClient }: TourManagerProps) => {
                   <div>
                     <Label htmlFor="max_capacity">Max Capacity</Label>
                     <Input
-                      id="max_capacity"
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={formData.max_capacity}
-                      onChange={(e) => handleInputChange('max_capacity', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="price_per_person">Price per Person ($)</Label>
-                    <Input
-                      id="price_per_person"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.price_per_person}
-                      onChange={(e) => handleInputChange('price_per_person', parseFloat(e.target.value))}
-                    />
+  id="max_capacity"
+  type="number"
+  min="1"
+  max="50"
+  value={formData.max_capacity || ""}   // ← prevent NaN
+  onChange={(e) =>
+    handleInputChange(
+      "max_capacity",
+      e.target.value === "" ? 0 : parseInt(e.target.value)
+    )
+  }
+/>
+<Label htmlFor="price_per_person">Price Per Person</Label>
+<Input
+  id="price_per_person"
+  type="number"
+  step="0.01"
+  min="0"
+  value={formData.price_per_person || ""}
+  onChange={(e) =>
+    handleInputChange(
+      "price_per_person",
+      e.target.value === "" ? 0 : parseFloat(e.target.value)
+    )
+  }
+/>
+
                   </div>
                 </div>
 

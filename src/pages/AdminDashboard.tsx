@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 import LocationUpload from "@/components/LocationUpload";
 import BookingManager from "@/components/BookingManager";
 import Schedule from "@/components/Schedule";
-import TourManager from "@/components/TourManager"; // Import the new component
+import TourManager from "@/components/TourManager";
 import { 
   Users, 
   Calendar, 
@@ -23,7 +23,7 @@ import {
   LogOut,
   Camera,
   Trash2,
-  CalendarDays // Add this import
+  CalendarDays
 } from "lucide-react";
 import { apiClient, BookingResponse, LocationResponse, TourResponse } from "@/lib/api";
 
@@ -43,7 +43,6 @@ interface StatItem {
   color: string;
 }
 
-// Update the tab type to include tours
 type TabType = 'overview' | 'bookings' | 'locations' | 'schedule' | 'tours';
 
 const AdminDashboard = () => {
@@ -51,7 +50,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [locations, setLocations] = useState<LocationResponse[]>([]);
-  const [tours, setTours] = useState<TourResponse[]>([]); // Add tours state
+  const [tours, setTours] = useState<TourResponse[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [scheduleKey, setScheduleKey] = useState(0);
   const { toast } = useToast();
@@ -104,7 +103,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Add fetchTours function
   const fetchTours = async () => {
     try {
       const response = await apiClient.getTours();
@@ -179,7 +177,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Update stats to include tours
   const stats: StatItem[] = [
     {
       title: "Total Bookings",
@@ -403,7 +400,7 @@ const AdminDashboard = () => {
             </Button>
           </div>
 
-          {/* Navigation Tabs - Updated to include tours */}
+          {/* Navigation Tabs */}
           <div className="flex space-x-1 mb-8 bg-muted p-1 rounded-lg overflow-x-auto">
             {[
               { key: 'overview' as const, label: 'Overview', icon: TrendingUp },

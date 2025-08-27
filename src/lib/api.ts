@@ -1,4 +1,4 @@
-// src/lib/api.ts - Fixed version with proper image handling
+// src/lib/api.ts - Fixed version with proper image handling and tours support
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // Define interfaces
@@ -83,6 +83,31 @@ export interface BookingStatistics {
   completed_bookings: number;
   cancelled_bookings: number;
   recent_bookings: number;
+}
+
+export interface TourData {
+  title: string;
+  description?: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+  start_time?: string;
+  max_capacity: number;
+  price_per_person?: number;
+  notes?: string;
+}
+
+export interface TourResponse extends TourData {
+  id: string;
+  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
+  current_bookings: number;
+  available_spots: number;
+  is_full: boolean;
+  duration_days: number;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ApiErrorResponse {
@@ -242,6 +267,42 @@ class ApiClient {
   async deleteLocation(id: string): Promise<void> {
     return this.request<void>(`/locations/${id}/`, { 
       method: 'DELETE' 
+    });
+  }
+
+  // Tours methods
+  async getTours(): Promise<{ results: TourResponse[]; count: number }> {
+    return this.request<{ results: TourResponse[]; count: number }>('/tours/');
+  }
+
+  async createTour(tourData: TourData): Promise<TourResponse> {
+    return this.request<TourResponse>('/tours/', {
+      method: 'POST',
+      body: JSON.stringify(tourData),
+    });
+  }
+
+  async updateTour(id: string, tourData: Partial<TourData>): Promise<TourResponse> {
+    return this.request<TourResponse>(`/tours/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(tourData),
+    });
+  }
+
+  async deleteTour(id: string): Promise<void> {
+    return this.request<void>(`/tours/${id}/`, { 
+      method: 'DELETE' 
+    });
+  }
+
+  async getUpcomingTours(): Promise<TourResponse[]> {
+    return this.request<TourResponse[]>('/tours/upcoming/');
+  }
+
+  async updateTourCapacity(id: string, currentBookings: number): Promise<TourResponse> {
+    return this.request<TourResponse>(`/tours/${id}/update-capacity/`, {
+      method: 'POST',
+      body: JSON.stringify({ current_bookings: currentBookings }),
     });
   }
 
