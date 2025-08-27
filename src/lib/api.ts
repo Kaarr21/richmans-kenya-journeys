@@ -1,4 +1,4 @@
-// src/lib/api.ts - Fixed version with proper image handling and tours support
+// src/lib/api.ts - Enhanced with location update and complete CRUD
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // Define interfaces
@@ -40,6 +40,11 @@ export interface BookingUpdateData {
 
 export interface LocationData {
   title: string;
+  description?: string;
+}
+
+export interface LocationUpdateData {
+  title?: string;
   description?: string;
 }
 
@@ -160,6 +165,43 @@ class ApiClient {
     }
   }
 
+  private async requestWithoutContentType<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    const config: RequestInit = {
+      headers: {
+        ...(this.token && { Authorization: `Token ${this.token}` }),
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        let errorData: ApiErrorResponse;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `HTTP error! status: ${response.status}` };
+        }
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json() as Promise<T>;
+      }
+      
+      return {} as T;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error occurred');
+    }
+  }
+
   // Auth methods
   async login(email: string, password: string): Promise<AuthResponse> {
     const response = await this.request<AuthResponse>('/auth/login/', {
@@ -237,30 +279,28 @@ class ApiClient {
   }
 
   async createLocation(formData: FormData): Promise<LocationResponse> {
-    const response = await fetch(`${API_BASE_URL}/locations/`, {
+    const response = await this.requestWithoutContentType<LocationResponse>('/locations/', {
       method: 'POST',
-      headers: {
-        ...(this.token && { Authorization: `Token ${this.token}` }),
-      },
       body: formData,
     });
 
-    if (!response.ok) {
-      let errorData: ApiErrorResponse;
-      try {
-        errorData = await response.json();
-      } catch {
-        errorData = { error: `HTTP error! status: ${response.status}` };
-      }
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    const location = await response.json() as LocationResponse;
-    
     // Ensure backward compatibility
     return {
-      ...location,
-      image_url: location.image_url || location.primary_image_url || '',
+      ...response,
+      image_url: response.image_url || response.primary_image_url || '',
+    };
+  }
+
+  async updateLocation(id: string, data: LocationUpdateData): Promise<LocationResponse> {
+    const response = await this.request<LocationResponse>(`/locations/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+
+    // Ensure backward compatibility
+    return {
+      ...response,
+      image_url: response.image_url || response.primary_image_url || '',
     };
   }
 

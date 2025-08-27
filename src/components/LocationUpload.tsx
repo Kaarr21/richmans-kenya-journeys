@@ -1,16 +1,24 @@
-// src/components/LocationUpload.tsx - Fixed version with better error handling
+// src/components/LocationUpload.tsx - Enhanced with edit functionality
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, X, Plus, Image as ImageIcon } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { Upload, X, Plus, Image as ImageIcon, Edit } from "lucide-react";
+import { apiClient, LocationResponse } from "@/lib/api";
 
 interface LocationUploadProps {
   onLocationAdded: () => void;
+}
+
+interface LocationEditProps {
+  location: LocationResponse;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdated: () => void;
 }
 
 interface ImageWithCaption {
@@ -18,6 +26,173 @@ interface ImageWithCaption {
   preview: string;
   caption: string;
 }
+
+const LocationEditDialog = ({ location, isOpen, onClose, onUpdated }: LocationEditProps) => {
+  const [title, setTitle] = useState(location.title);
+  const [description, setDescription] = useState(location.description || "");
+  const [updating, setUpdating] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!title.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a title",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUpdating(true);
+
+    try {
+      // Since we don't have an update endpoint in the API client yet, 
+      // we'll need to add this. For now, show what the request would look like:
+      const response = await fetch(`http://localhost:8000/api/locations/${location.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiClient.getToken() && { Authorization: `Token ${apiClient.getToken()}` }),
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Success",
+        description: `Location "${title}" updated successfully!`
+      });
+
+      onUpdated();
+      onClose();
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Update error:', error);
+      toast({
+        title: "Error",
+        description: `Failed to update location: ${errorMessage}`,
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const resetForm = () => {
+    setTitle(location.title);
+    setDescription(location.description || "");
+  };
+
+  React.useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, location]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <Edit className="h-5 w-5" />
+            <span>Edit Location</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <Label htmlFor="edit-title">Location Title *</Label>
+            <Input
+              id="edit-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Maasai Mara National Reserve"
+              required
+              maxLength={255}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="edit-description">Description</Label>
+            <Textarea
+              id="edit-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of this location..."
+              rows={3}
+              maxLength={1000}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {description.length}/1000 characters
+            </p>
+          </div>
+
+          {/* Show current images - read only for now */}
+          <div>
+            <Label>Current Images ({location.images?.length || 0})</Label>
+            {location.images && location.images.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {location.images.map((image, index) => (
+                  <div key={image.id} className="relative aspect-video bg-gray-100 rounded border overflow-hidden">
+                    <img
+                      src={image.image_url}
+                      alt={image.caption || `Image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-1">
+                      <p className="text-xs truncate">{image.caption || `Image ${index + 1}`}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">
+              Note: Image editing will be available in a future update. To change images, please delete and re-create the location.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button 
+              type="submit" 
+              disabled={updating || !title.trim()}
+              className="flex-1"
+            >
+              {updating ? (
+                <>
+                  <Upload className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Update Location
+                </>
+              )}
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              disabled={updating}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
   const [title, setTitle] = useState("");
@@ -367,4 +542,6 @@ const LocationUpload = ({ onLocationAdded }: LocationUploadProps) => {
   );
 };
 
+// Export both components
 export default LocationUpload;
+export { LocationEditDialog };

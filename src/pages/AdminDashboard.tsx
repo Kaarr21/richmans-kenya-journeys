@@ -1,4 +1,4 @@
-// src/pages/AdminDashboard.tsx - Add tours tab and management
+// src/pages/AdminDashboard.tsx - Enhanced with location editing
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import AuthPage from "@/components/AuthPage";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import LocationUpload from "@/components/LocationUpload";
+import LocationUpload, { LocationEditDialog } from "@/components/LocationUpload";
 import BookingManager from "@/components/BookingManager";
 import Schedule from "@/components/Schedule";
 import TourManager from "@/components/TourManager";
@@ -23,7 +23,8 @@ import {
   LogOut,
   Camera,
   Trash2,
-  CalendarDays
+  CalendarDays,
+  Edit
 } from "lucide-react";
 import { apiClient, BookingResponse, LocationResponse, TourResponse } from "@/lib/api";
 
@@ -53,6 +54,7 @@ const AdminDashboard = () => {
   const [tours, setTours] = useState<TourResponse[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [scheduleKey, setScheduleKey] = useState(0);
+  const [editingLocation, setEditingLocation] = useState<LocationResponse | null>(null);
   const { toast } = useToast();
 
   const checkAuth = useCallback(async () => {
@@ -323,15 +325,24 @@ const AdminDashboard = () => {
                           </div>
                         )}
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => deleteLocation(location.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </Button>
+                          <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setEditingLocation(location)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => deleteLocation(location.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       <div className="p-4">
@@ -426,6 +437,16 @@ const AdminDashboard = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Location Edit Dialog */}
+      {editingLocation && (
+        <LocationEditDialog
+          location={editingLocation}
+          isOpen={!!editingLocation}
+          onClose={() => setEditingLocation(null)}
+          onUpdated={fetchLocations}
+        />
+      )}
     </div>
   );
 };
