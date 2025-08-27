@@ -19,7 +19,7 @@ const HeroSection = () => {
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center mb-4">
           <MapPin className="h-6 w-6 text-primary mr-2" />
-          <span className="text-lg text-white/90 font-medium">Safari in Kenya</span>
+          <span className="text-lg text-white/90 font-medium">Are you in Kenya?</span>
         </div>
         
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
@@ -31,8 +31,9 @@ const HeroSection = () => {
         </h1>
         
         <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed">
-          Your personal guide for unforgettable tours, from breathtaking safaris to 
-          vibrant local culture across the beautiful landscapes of Kenya.
+          Reliable Taxi Service with Richard
+Your trusted driver for safe, comfortable rides around Nairobi and beyond. 
+Airport transfers, city tours, and personalized trips across Kenya.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -57,11 +58,11 @@ const HeroSection = () => {
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
           <div className="text-center">
             <div className="text-3xl font-bold text-primary mb-2">500+</div>
-            <div className="text-white/80">Happy Travelers</div>
+            <div className="text-white/80">Satisfied Passengers</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-primary mb-2">15+</div>
-            <div className="text-white/80">Years Experience</div>
+            <div className="text-white/80">Years of Safe Driving</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-primary mb-2">50+</div>

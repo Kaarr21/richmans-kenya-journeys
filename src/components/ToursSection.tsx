@@ -39,8 +39,9 @@ const ToursSection = () => {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Discover the breathtaking destinations Richard has explored across Kenya. 
-            From wildlife safaris to mountain adventures and coastal escapes.
+            Experience safe and reliable taxi services in Nairobi with a trusted local driver. 
+From airport transfers to city tours and cross-country trips, we provide 
+comfortable transportation with a personal touch.
           </p>
         </div>
 

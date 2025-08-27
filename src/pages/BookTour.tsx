@@ -111,17 +111,18 @@ const BookTour = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Book Your Adventure
+            Book Your Ride
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Ready to explore Kenya's incredible destinations? Tell us where you'd like 
-              to go and we'll create the perfect adventure tailored just for you.
+              Need reliable transportation in Nairobi or anywhere in Kenya? Tell us your 
+pickup and destination details, and we'll provide safe, comfortable service 
+tailored to your needs.
             </p>
           </div>
 
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-2xl text-center">Book Your Custom Tour</CardTitle>
+              <CardTitle className="text-2xl text-center">Book Your Taxi Service</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -182,7 +183,7 @@ const BookTour = () => {
                       name="destination"
                       value={formData.destination}
                       onChange={handleInputChange}
-                      placeholder="e.g., Maasai Mara, Mount Kenya, Diani Beach" 
+                      placeholder="e.g.,JKIA Airport, City Tour, Karen, Westlands" 
                       required
                     />
                   </div>
@@ -211,7 +212,7 @@ const BookTour = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="preferredDate">Preferred Start Date</Label>
+                  <Label htmlFor="preferredDate">Pickup Date</Label>
                   <Input 
                     id="preferredDate" 
                     name="preferredDate"
@@ -228,7 +229,7 @@ const BookTour = () => {
                     name="specialRequests"
                     value={formData.specialRequests}
                     onChange={handleInputChange}
-                    placeholder="Tell us about any special requirements, dietary restrictions, accessibility needs, or specific activities you're interested in..."
+                    placeholder="Pickup location, specific route preferences, child seats, luggage space, accessibility needs..."
                     rows={4}
                   />
                 </div>
@@ -239,11 +240,11 @@ const BookTour = () => {
                   size="lg"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Booking Request"}
+                  {isSubmitting ? "Submitting..." : "Request Taxi Service"}
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  Richard will contact you within 24 hours to confirm your booking details.
+                  Richard will contact you within 12 hours to confirm your pickup details
                 </p>
               </form>
             </CardContent>

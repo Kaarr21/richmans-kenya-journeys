@@ -39,14 +39,14 @@ const ContactSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Start Your{" "}
+            Book{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-safari-sunset">
-              Adventure Today
+              Your Ride Today
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Ready to explore Kenya? Get in touch and let's plan your perfect safari adventure. 
-            I respond to all inquiries within 24 hours.
+            Need reliable transportation in Nairobi or beyond? Get in touch for airport transfers, 
+city tours, or custom trips anywhere in Kenya. I respond to all requests within 2 hours.
           </p>
         </div>
 

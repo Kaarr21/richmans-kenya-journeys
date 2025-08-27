@@ -68,8 +68,9 @@ const Gallery = () => {
               Safari Gallery
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Explore the breathtaking beauty of Kenya through our curated collection 
-              of safari moments and adventures captured by Richard and our guests.
+              Experience safe and reliable taxi services in Kenya with a trusted local driver. 
+From airport transfers to city tours and cross-country trips, we provide 
+comfortable transportation with a personal touch.
             </p>
           </div>
 

@@ -33,17 +33,17 @@ const AboutSection = () => {
           {/* Content */}
           <div>
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Why Travel with{" "}
+              Why Ride with {" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-safari-sunset">
                 Richard?
               </span>
             </h2>
             
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              As a native Kenyan with over 15 years of guiding experience, I don't just show you 
-              Kenya – I help you experience it authentically. From the Big Five in Maasai Mara 
-              to the vibrant culture of local communities, every journey is crafted with passion 
-              and deep local knowledge.
+              As a native Kenyan with over 15 years of driving experience, I don't just get you 
+from A to B – I provide safe, reliable transportation with local expertise. 
+From airport pickups to city tours and cross-country trips, every journey is 
+handled with professionalism and deep local knowledge.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-6 mb-8">

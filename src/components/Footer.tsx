@@ -14,9 +14,9 @@ const Footer = () => {
               <span className="text-2xl font-bold">Richman Tours & Travel</span>
             </div>
             <p className="text-white/80 mb-6 leading-relaxed">
-              Experience the authentic beauty of Kenya with a trusted local guide. 
-              From thrilling safaris to cultural immersions, we create unforgettable 
-              memories that last a lifetime.
+              Experience safe and reliable taxi services in Nairobi with a trusted local driver. 
+From airport transfers to city tours and cross-country trips, we provide 
+comfortable transportation with a personal touch.
             </p>
           </div>
 
@@ -27,7 +27,7 @@ const Footer = () => {
               {[
                 "Home",
                 "Gallery",
-                "Book a Tour",
+                "Book a Ride",
                 "Contact"
               ].map((link) => (
                 <li key={link}>
