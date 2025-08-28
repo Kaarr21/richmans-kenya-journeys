@@ -1,13 +1,17 @@
 services:
-  # Backend Django API
+  # Full-stack Django + React App
   - type: web
-    name: richman-backend
+    name: richman-tours
     env: python
+    runtime: python-3.11.9
     buildCommand: |
+      pip install --upgrade pip
       pip install -r requirements.txt
+      npm install
+      npm run build
       python manage.py collectstatic --noinput
       python manage.py migrate
-    startCommand: gunicorn richman_backend.wsgi:application
+    startCommand: gunicorn richman_backend.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -20,9 +24,9 @@ services:
           name: richman-db
           property: connectionString
       - key: ALLOWED_HOSTS
-        value: "richman-backend.onrender.com,richman-frontend.onrender.com"
+        value: "richman-tours.onrender.com"
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://richman-frontend.onrender.com"
+        value: "https://richman-tours.onrender.com"
       - key: EMAIL_HOST
         value: "smtp.gmail.com"
       - key: EMAIL_PORT
@@ -30,23 +34,11 @@ services:
       - key: EMAIL_USE_TLS
         value: "True"
       - key: EMAIL_HOST_USER
-        sync: false  # You'll set this manually
+        value: "karokin35@gmail.com"
       - key: EMAIL_HOST_PASSWORD
-        sync: false  # You'll set this manually
-
-  # Frontend React App
-  - type: web
-    name: richman-frontend
-    env: node
-    buildCommand: |
-      npm install
-      npm run build
-    startCommand: npx serve -s dist -l 10000
-    envVars:
-      - key: NODE_ENV
-        value: production
+        value: "dscq pqoy xreg xuyz"
       - key: VITE_API_BASE_URL
-        value: "https://richman-backend.onrender.com/api"
+        value: "https://richman-tours.onrender.com/api"
 
 databases:
   - name: richman-db
