@@ -62,7 +62,10 @@ WSGI_APPLICATION = 'richman_backend.wsgi.application'
 
 if 'DATABASE_URL' in os.environ:
     DATABASES = {
-        "default": dj_database_url.parse(os.environ.get('DATABASE_URL'))
+        "default": dj_database_url.parse(os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+        )
 
     }
 else:
@@ -97,18 +100,21 @@ REST_FRAMEWORK = {
 }
 
 # CORS Configuration - FIXED AND EXPANDED
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8080",  # Your Vite dev server
-    "http://127.0.0.1:8080",
-    "http://localhost:5173",  # Default Vite port
-    "http://127.0.0.1:5173",
-]
-
-# Alternative: Allow all origins during development (less secure)
+CORS_ALLOWED_ORIGINS = []
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+else:
+    # Production CORS settings
+    cors_origins = config('CORS_ALLOWED_ORIGINS', default='').split(',')
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins if origin.strip()]
 
 # Allow credentials (for authentication)
 CORS_ALLOW_CREDENTIALS = True
@@ -123,12 +129,20 @@ if not DEBUG:
         "https://richman-frontend.onrender.com",
         "https://richman-backend.onrender.com",
     ]
+if not DEBUG:
+    # Static files serving for production
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
     
     # Security settings for production
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    USE_TZ = True
 
 # Serve React app from Django (for single service deployment)
 TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'dist')]
@@ -197,38 +211,40 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CSRF Settings (if you need them)
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+csrf_origins = config('CORS_ALLOWED_ORIGINS', default='').split(',')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins if origin.strip()]
 
 # Logging configuration for better debugging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'django.log'),
-        },
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
         'bookings.email_service': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
     },
 }
