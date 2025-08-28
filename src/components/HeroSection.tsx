@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
-import heroImage from "/home/karoki/Documents/Masai_Mara_at_Sunset.jpg";
-
+const heroImage = "/Masai_Mara_at_Sunset.jpg";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
