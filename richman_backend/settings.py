@@ -1,5 +1,6 @@
 # settings.py - Updated CORS and Media Configuration
 
+import dj_database_url
 import os
 from decouple import config
 from pathlib import Path
@@ -59,8 +60,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'richman_backend.wsgi.application'
 
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        "default": dj_database_url.parse(os.environ.get('DATABASE_URL'))
+
+    }
+else:
 # Database
-DATABASES = {
+    DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('DATABASE_NAME'),
@@ -106,6 +113,27 @@ if DEBUG:
 # Allow credentials (for authentication)
 CORS_ALLOW_CREDENTIALS = True
 
+if not DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        "https://richman-frontend.onrender.com",
+        "https://your-custom-domain.com",  # Add your domain when you get one
+    ]
+    
+    CSRF_TRUSTED_ORIGINS = [
+        "https://richman-frontend.onrender.com",
+        "https://richman-backend.onrender.com",
+    ]
+    
+    # Security settings for production
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Serve React app from Django (for single service deployment)
+TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'dist')]
+
+
 # Headers that can be used during the actual request
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -142,6 +170,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'dist'),
+]
 # Media files - ENHANCED CONFIGURATION
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
