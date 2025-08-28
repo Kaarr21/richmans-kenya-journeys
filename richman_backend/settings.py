@@ -1,4 +1,4 @@
-# settings.py - Final Clean Version
+# settings.py - Fixed version for proper static file serving
 
 import dj_database_url
 import os
@@ -137,12 +137,38 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# Static files
+# Static files - FIXED CONFIGURATION
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "dist")]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Include React build files in static files
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "dist", "assets"),  # Only include the assets folder
+]
+
+# WhiteNoise configuration for better static file serving
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
+
+# Add MIME type configuration for WhiteNoise
+WHITENOISE_MIMETYPES = {
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.eot': 'application/vnd.ms-fontobject',
+    '.otf': 'font/otf',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.json': 'application/json',
+}
 
 # Media files
 MEDIA_URL = "/media/"

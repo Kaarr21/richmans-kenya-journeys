@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build.sh - Optimized Render build script for full-stack app
+# build.sh - Fixed build script for proper static file handling
 
 set -o errexit  # Exit on error
 
@@ -27,6 +27,10 @@ npm cache clean --force || true
 echo "📦 Installing Node.js dependencies..."
 npm ci --prefer-offline --no-audit --progress=false
 
+# Set the public URL for proper asset paths
+echo "🔧 Setting PUBLIC_URL for proper asset paths..."
+export PUBLIC_URL="/static/"
+
 # Build React app with error handling
 echo "🏗️ Building React app..."
 npm run build
@@ -40,6 +44,28 @@ fi
 echo "📋 Build output contents:"
 ls -la dist/
 
+# Create a custom index.html that works with Django static serving
+echo "🔧 Fixing asset paths in index.html..."
+python << 'EOF'
+import os
+import re
+
+index_path = 'dist/index.html'
+if os.path.exists(index_path):
+    with open(index_path, 'r') as f:
+        content = f.read()
+    
+    # Replace asset paths to work with Django static serving
+    content = re.sub(r'/assets/', '/static/', content)
+    
+    with open(index_path, 'w') as f:
+        f.write(content)
+    
+    print("✅ Fixed asset paths in index.html")
+else:
+    print("❌ index.html not found")
+EOF
+
 # Collect Django static files (includes React build)
 echo "📦 Collecting Django static files..."
 python manage.py collectstatic --noinput --clear
@@ -47,17 +73,5 @@ python manage.py collectstatic --noinput --clear
 # Run Django migrations with retry logic
 echo "🗄️ Running database migrations..."
 python manage.py migrate --noinput
-
-# Create superuser if needed (optional)
-# echo "👤 Creating superuser (if needed)..."
-# python manage.py shell -c "
-# from django.contrib.auth import get_user_model
-# User = get_user_model()
-# if not User.objects.filter(is_superuser=True).exists():
-#     User.objects.create_superuser('admin', 'admin@example.com', 'your-secure-password')
-#     print('Superuser created')
-# else:
-#     print('Superuser already exists')
-# " || true
 
 echo "✅ Build completed successfully!"
