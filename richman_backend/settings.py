@@ -1,4 +1,4 @@
-# settings.py - Enhanced static file serving with proper MIME types
+# settings.py - Simplified and robust static file serving
 
 import dj_database_url
 import os
@@ -46,7 +46,7 @@ ROOT_URLCONF = "richman_backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "dist")],  # serve React build
+        "DIRS": [BASE_DIR / "staticfiles"],  # Serve React from staticfiles
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -99,7 +99,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
-# CORS
+# CORS Configuration
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOWED_ORIGINS = [
@@ -114,18 +114,13 @@ else:
     cors_origins = config("CORS_ALLOWED_ORIGINS", default="").split(",")
     CORS_ALLOWED_ORIGINS = [
         origin.strip() for origin in cors_origins if origin.strip()
-    ] or [
-        "https://richman-frontend.onrender.com",
     ]
     CORS_ALLOW_CREDENTIALS = True
-    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
-        "https://richman-backend.onrender.com",
-    ]
+    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
-# CORS extra config
 CORS_ALLOW_HEADERS = [
     "accept",
-    "accept-encoding",
+    "accept-encoding", 
     "authorization",
     "content-type",
     "dnt",
@@ -137,31 +132,44 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# Static files - ENHANCED CONFIGURATION
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+# ================================
+# STATIC FILES - CRITICAL SECTION
+# ================================
 
-# Include React build files in static files
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "dist", "assets"),  # React build assets
+# Static files configuration
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# IMPORTANT: Include React build files in staticfiles collection
+STATICFILES_DIRS = []
+
+# Only add dist directory if it exists (for local development)
+if (BASE_DIR / "dist").exists():
+    STATICFILES_DIRS.append(BASE_DIR / "dist")
+
+# Static files finders
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-# Use Django's default static file storage in production for better MIME type handling
+# Use whitenoise for static file serving in production
 if DEBUG:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 else:
-    # Use CompressedManifestStaticFilesStorage for production with proper MIME types
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
-# WhiteNoise configuration - ENHANCED
+# WhiteNoise configuration
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
-WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br']
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br'
+]
 
-# Enhanced MIME type configuration for WhiteNoise
+# Enhanced MIME type configuration
 WHITENOISE_MIMETYPES = {
     '.js': 'application/javascript; charset=utf-8',
-    '.mjs': 'application/javascript; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8', 
     '.css': 'text/css; charset=utf-8',
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',
@@ -171,7 +179,7 @@ WHITENOISE_MIMETYPES = {
     '.svg': 'image/svg+xml; charset=utf-8',
     '.ico': 'image/x-icon',
     '.png': 'image/png',
-    '.jpg': 'image/jpeg',
+    '.jpg': 'image/jpeg', 
     '.jpeg': 'image/jpeg',
     '.gif': 'image/gif',
     '.webp': 'image/webp',
@@ -180,34 +188,22 @@ WHITENOISE_MIMETYPES = {
     '.txt': 'text/plain; charset=utf-8',
     '.html': 'text/html; charset=utf-8',
     '.xml': 'application/xml; charset=utf-8',
-    '.pdf': 'application/pdf',
-    '.zip': 'application/zip',
-    '.gz': 'application/gzip',
-    '.tar': 'application/x-tar',
-    '.mp4': 'video/mp4',
-    '.webm': 'video/webm',
-    '.mp3': 'audio/mpeg',
-    '.wav': 'audio/wav',
-    '.ogg': 'audio/ogg',
 }
-
-# Additional static file settings
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-]
 
 # Media files
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-os.makedirs(MEDIA_ROOT, exist_ok=True)
-os.makedirs(os.path.join(MEDIA_ROOT, "locations"), exist_ok=True)
+MEDIA_ROOT = BASE_DIR / "media"
 
+# Ensure media directories exist
+MEDIA_ROOT.mkdir(exist_ok=True)
+(MEDIA_ROOT / "locations").mkdir(exist_ok=True)
+
+# File upload limits
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 
-# Email
+# Email configuration
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_PORT = config("EMAIL_PORT", cast=int)
@@ -215,14 +211,14 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
-# General
+# General settings
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Nairobi"
 USE_I18N = True
 USE_TZ = True
 
-# Security (production only)
+# Security settings (production only)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_BROWSER_XSS_FILTER = True
@@ -230,13 +226,9 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_SSL_REDIRECT = False  # Enable if you want forced HTTPS
-    
-    # Additional security for static files
-    SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
 
-# Enhanced Logging
+# Logging configuration
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -249,7 +241,7 @@ LOGGING = {
     "handlers": {
         "console": {
             "level": "INFO",
-            "class": "logging.StreamHandler",
+            "class": "logging.StreamHandler", 
             "formatter": "verbose",
         },
     },
@@ -263,28 +255,10 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "django.request": {
-            "handlers": ["console"],
-            "level": "ERROR",
-            "propagate": False,
-        },
         "whitenoise": {
             "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "bookings.email_service": {
-            "handlers": ["console"],
-            "level": "INFO",
+            "level": "INFO", 
             "propagate": False,
         },
     },
 }
-
-# Static file serving debug
-if DEBUG:
-    LOGGING['loggers']['django.contrib.staticfiles'] = {
-        'handlers': ['console'],
-        'level': 'DEBUG',
-        'propagate': False,
-    }
