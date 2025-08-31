@@ -93,8 +93,10 @@ if command -v bun &> /dev/null; then
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.8.3",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "terser": "^5.24.0"
   }
 }
 EOF
@@ -121,14 +123,14 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
           query: ['@tanstack/react-query'],
-          ui: ['lucide-react', '@radix-ui/react-slot', 'clsx', 'tailwind-merge']
+          ui: ['lucide-react', 'clsx', 'tailwind-merge']
         },
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -136,7 +138,8 @@ export default defineConfig(({ mode }) => ({
       }
     },
     chunkSizeWarningLimit: 1000,
-    target: 'es2020'
+    target: 'es2020',
+    reportCompressedSize: false
   },
   base: mode === 'production' ? '/static/' : '/',
   define: {
@@ -250,13 +253,49 @@ export default {
 } satisfies Config;
 TAILWIND_EOF
     
-    # Build with Bun
+    # Build with Bun - multiple strategies
     echo "🏗️ Building React app with Bun..."
+    
+    # Strategy 1: Standard build
     if bun run build; then
-        echo "✅ Bun build successful!"
+        echo "✅ Standard Bun build successful!"
+    # Strategy 2: Build with esbuild minifier
+    elif bunx vite build --mode production --base=/static/ --minify=esbuild; then
+        echo "✅ Bun build with esbuild minifier successful!"
+    # Strategy 3: Build without minification
+    elif bunx vite build --mode production --base=/static/ --minify=false; then
+        echo "✅ Bun build without minification successful!"
     else
-        echo "❌ Bun build failed, trying alternative method..."
-        exit 1
+        echo "❌ All Bun build strategies failed, trying fallback..."
+        
+        # Fallback: Simple build with basic config
+        cat > vite.simple.config.ts << 'SIMPLE_EOF'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from "path"
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    minify: false,
+    target: 'es2020'
+  },
+  base: '/static/'
+})
+SIMPLE_EOF
+        
+        if bunx vite build --config vite.simple.config.ts; then
+            echo "✅ Simple config build successful!"
+        else
+            echo "❌ All build strategies failed"
+            exit 1
+        fi
     fi
     
 else
