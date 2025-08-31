@@ -1,10 +1,8 @@
-// vite.config.ts - Simplified configuration for better compatibility
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
 
-// https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   resolve: {
     alias: {
@@ -15,18 +13,30 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
+    minify: 'terser',
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react']
+        },
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
       }
-    }
+    },
+    chunkSizeWarningLimit: 1000,
   },
-  base: process.env.NODE_ENV === 'production' ? '/static/' : '/',
+  base: mode === 'production' ? '/static/' : '/',
   server: {
     port: 5173,
-    host: true
+    host: '0.0.0.0'
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
+  },
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
   }
-})
+}))
