@@ -1,50 +1,158 @@
 #!/usr/bin/env bash
-# build.sh - Optimized build script for Render deployment
+# build.sh - Fixed build script for Render deployment
 
 set -o errexit
 set -o pipefail
 
-echo "🚀 Starting optimized build process..."
+echo "🚀 Starting build process..."
 
-# Install Python dependencies
+# Install Python dependencies first
 echo "📦 Installing Python dependencies..."
 python -m pip install --upgrade pip
 pip install -r requirements.txt --timeout=300
 
-# Clean previous builds
-echo "🧹 Cleaning previous builds..."
+# Clean everything
+echo "🧹 Complete cleanup..."
 rm -rf node_modules package-lock.json .vite dist staticfiles || true
-npm cache clean --force || true
+rm -rf .npm _npm_cache || true
 
-# Install Node dependencies
+# Check Node.js version
+echo "🔍 Node.js environment check..."
+node --version
+npm --version
+which node
+which npm
+
+# Create a minimal package.json for this build
+echo "📦 Creating build-specific package.json..."
+cat > package.json << 'EOF'
+{
+  "name": "richman-tours",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1",
+    "lucide-react": "^0.462.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.2",
+    "vite": "^5.4.19",
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.5.6",
+    "autoprefixer": "^10.4.21",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7"
+  }
+}
+EOF
+
+# Install with explicit cache settings
 echo "📦 Installing Node.js dependencies..."
-npm install --legacy-peer-deps
+npm config set cache /tmp/.npm
+npm install --no-audit --no-fund --legacy-peer-deps --verbose
 
-# Verify critical dependencies
-echo "🔍 Verifying dependencies..."
-if [ ! -d "node_modules/vite" ]; then
-    echo "❌ Vite not found, installing directly..."
-    npm install vite@latest @vitejs/plugin-react@latest --save-dev --force
+# Double-check Vite installation
+echo "🔍 Verifying Vite installation..."
+if [ ! -f "node_modules/.bin/vite" ]; then
+    echo "❌ Vite binary not found, forcing installation..."
+    npm install vite@5.4.19 --save-dev --force --no-audit
 fi
 
-if [ ! -d "node_modules/react" ]; then
-    echo "❌ React not found, installing..."
-    npm install react@latest react-dom@latest --save --force
-fi
+# List what we actually have
+echo "📋 Installed packages check:"
+ls -la node_modules/.bin/vite* || echo "No vite binary found"
+ls -la node_modules/vite/ || echo "No vite package found"
 
-# Set production environment
-export NODE_ENV=production
-export VITE_API_BASE_URL=https://richman-tours.onrender.com/api
-
-# Build React application
+# Try direct build approaches
 echo "🏗️ Building React application..."
-npm run build || {
-    echo "❌ npm run build failed, trying npx vite build..."
-    npx vite build --base="/static/" --outDir="dist" || {
-        echo "❌ All build methods failed"
+
+# Method 1: Try npx first
+if npx vite build --base="/static/" --outDir="dist" --mode=production; then
+    echo "✅ npx vite build successful!"
+elif ./node_modules/.bin/vite build --base="/static/" --outDir="dist" --mode=production; then
+    echo "✅ Direct vite binary successful!"
+elif node -e "
+    const { build } = require('./node_modules/vite/dist/node/index.js');
+    build({
+        base: '/static/',
+        build: { outDir: 'dist' },
+        mode: 'production'
+    }).then(() => console.log('✅ Node API build successful!'))
+    .catch(err => { console.error('❌ Node API build failed:', err); process.exit(1); });
+"; then
+    echo "✅ Node API build completed!"
+else
+    echo "❌ All Vite methods failed, trying esbuild fallback..."
+    
+    # Install esbuild as fallback
+    npm install esbuild --save-dev --force
+    
+    # Create esbuild configuration
+    cat > build-fallback.mjs << 'EOF'
+import { build } from 'esbuild';
+import { resolve } from 'path';
+
+try {
+  await build({
+    entryPoints: ['src/main.tsx'],
+    bundle: true,
+    outdir: 'dist/assets',
+    format: 'esm',
+    platform: 'browser',
+    target: 'es2020',
+    minify: true,
+    sourcemap: false,
+    publicPath: '/static/',
+    loader: {
+      '.tsx': 'tsx',
+      '.ts': 'ts',
+      '.jsx': 'jsx',
+      '.js': 'js',
+      '.css': 'css'
+    },
+    external: [],
+    define: {
+      'process.env.NODE_ENV': '"production"'
+    }
+  });
+  
+  console.log('✅ esbuild fallback successful!');
+} catch (error) {
+  console.error('❌ esbuild failed:', error);
+  process.exit(1);
+}
+EOF
+    
+    node build-fallback.mjs || {
+        echo "❌ Even esbuild fallback failed"
         exit 1
     }
-}
+    
+    # Create index.html for esbuild output
+    mkdir -p dist
+    cat > dist/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Richman Tours</title>
+    <script type="module" crossorigin src="/static/main.js"></script>
+    <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
+EOF
+fi
 
 # Verify build output
 if [ ! -d "dist" ]; then

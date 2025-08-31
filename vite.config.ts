@@ -1,42 +1,22 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from "path"
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": "/opt/render/project/src/src",
     },
   },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['lucide-react']
-        },
-        assetFileNames: 'assets/[name]-[hash][extname]',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-      }
-    },
-    chunkSizeWarningLimit: 1000,
+    minify: true,
+    emptyOutDir: true,
   },
-  base: mode === 'production' ? '/static/' : '/',
-  server: {
-    port: 5173,
-    host: '0.0.0.0'
-  },
+  base: '/static/',
   define: {
-    'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
-  },
-  esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : [],
+    'process.env.NODE_ENV': '"production"',
   }
-}))
+})
