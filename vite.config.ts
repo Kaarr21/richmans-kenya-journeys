@@ -1,8 +1,9 @@
-// vite.config.ts - Fixed configuration for Django deployment
+// vite.config.ts - Simplified configuration for better compatibility
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -11,23 +12,21 @@ export default defineConfig({
     },
   },
   build: {
-    // Output directory should match Django's expectations
     outDir: 'dist',
-    // Ensure assets are placed in an assets folder
     assetsDir: 'assets',
-    // Generate manifest for better caching
-    manifest: true,
+    sourcemap: false,
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html')
+      output: {
+        manualChunks: undefined,
       }
     }
   },
-  // Set base URL for proper asset serving in production
   base: process.env.NODE_ENV === 'production' ? '/static/' : '/',
-  // Configure dev server
   server: {
     port: 5173,
     host: true
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   }
 })
