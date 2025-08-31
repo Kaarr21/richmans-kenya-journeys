@@ -23,7 +23,7 @@ echo "🥟 Trying Bun as alternative to npm..."
 if command -v bun &> /dev/null; then
     echo "✅ Bun is available, using it instead of npm"
     
-    # Create package.json for your actual app
+    # Create package.json with ALL your actual dependencies
     cat > package.json << 'EOF'
 {
   "name": "richman-tours",
@@ -34,20 +34,65 @@ if command -v bun &> /dev/null; then
     "build": "vite build --mode production --base=/static/"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.1",
-    "lucide-react": "^0.462.0",
+    "@hookform/resolvers": "^3.10.0",
+    "@radix-ui/react-accordion": "^1.2.11",
+    "@radix-ui/react-alert-dialog": "^1.1.14",
+    "@radix-ui/react-aspect-ratio": "^1.1.7",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-checkbox": "^1.3.2",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-context-menu": "^2.2.15",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-dropdown-menu": "^2.1.15",
+    "@radix-ui/react-hover-card": "^1.1.14",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-menubar": "^1.1.15",
+    "@radix-ui/react-navigation-menu": "^1.2.13",
+    "@radix-ui/react-popover": "^1.1.14",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-radio-group": "^1.3.7",
+    "@radix-ui/react-scroll-area": "^1.2.9",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slider": "^1.3.5",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.5",
+    "@radix-ui/react-tabs": "^1.1.12",
+    "@radix-ui/react-toast": "^1.2.14",
+    "@radix-ui/react-toggle": "^1.1.9",
+    "@radix-ui/react-toggle-group": "^1.1.10",
+    "@radix-ui/react-tooltip": "^1.2.7",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "date-fns": "^3.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "input-otp": "^1.4.2",
+    "lucide-react": "^0.462.0",
+    "next-themes": "^0.3.0",
+    "react": "^18.3.1",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.61.1",
+    "react-resizable-panels": "^2.1.9",
+    "react-router-dom": "^6.30.1",
+    "recharts": "^2.15.4",
+    "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
-    "class-variance-authority": "^0.7.1"
+    "tailwindcss-animate": "^1.0.7",
+    "vaul": "^0.9.9",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/node": "^22.16.5",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.0.2",
-    "vite": "^5.4.19",
-    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "autoprefixer": "^10.4.21"
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19"
   }
 }
 EOF
@@ -56,13 +101,143 @@ EOF
     echo "📦 Installing dependencies with Bun..."
     bun install
     
+    # Create/copy the necessary config files
+    echo "⚙️ Setting up config files..."
+    
+    # Copy vite.config.ts if it exists, or create a working one
+    if [ ! -f "vite.config.ts" ]; then
+        echo "📝 Creating vite.config.ts..."
+        cat > vite.config.ts << 'VITE_EOF'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from "path"
+
+export default defineConfig(({ mode }) => ({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+      }
+    },
+  },
+  base: mode === 'production' ? '/static/' : '/',
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
+  },
+}))
+VITE_EOF
+    fi
+    
+    # Create postcss.config.js if missing
+    if [ ! -f "postcss.config.js" ]; then
+        echo "📝 Creating postcss.config.js..."
+        cat > postcss.config.js << 'POSTCSS_EOF'
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+POSTCSS_EOF
+    fi
+    
+    # Create simplified tailwind.config.ts if the existing one causes issues
+    if [ -f "tailwind.config.ts" ]; then
+        echo "📝 Backing up and simplifying tailwind.config.ts..."
+        mv tailwind.config.ts tailwind.config.ts.backup
+    fi
+    
+    cat > tailwind.config.ts << 'TAILWIND_EOF'
+import type { Config } from "tailwindcss";
+
+export default {
+	darkMode: ["class"],
+	content: [
+		"./pages/**/*.{ts,tsx}",
+		"./components/**/*.{ts,tsx}",
+		"./app/**/*.{ts,tsx}",
+		"./src/**/*.{ts,tsx}",
+	],
+	prefix: "",
+	theme: {
+		container: {
+			center: true,
+			padding: '2rem',
+			screens: {
+				'2xl': '1400px'
+			}
+		},
+		extend: {
+			colors: {
+				border: 'hsl(var(--border))',
+				input: 'hsl(var(--input))',
+				ring: 'hsl(var(--ring))',
+				background: 'hsl(var(--background))',
+				foreground: 'hsl(var(--foreground))',
+				primary: {
+					DEFAULT: 'hsl(var(--primary))',
+					foreground: 'hsl(var(--primary-foreground))'
+				},
+				secondary: {
+					DEFAULT: 'hsl(var(--secondary))',
+					foreground: 'hsl(var(--secondary-foreground))'
+				},
+				destructive: {
+					DEFAULT: 'hsl(var(--destructive))',
+					foreground: 'hsl(var(--destructive-foreground))'
+				},
+				muted: {
+					DEFAULT: 'hsl(var(--muted))',
+					foreground: 'hsl(var(--muted-foreground))'
+				},
+				accent: {
+					DEFAULT: 'hsl(var(--accent))',
+					foreground: 'hsl(var(--accent-foreground))'
+				},
+				popover: {
+					DEFAULT: 'hsl(var(--popover))',
+					foreground: 'hsl(var(--popover-foreground))'
+				},
+				card: {
+					DEFAULT: 'hsl(var(--card))',
+					foreground: 'hsl(var(--card-foreground))'
+				}
+			},
+			borderRadius: {
+				lg: 'var(--radius)',
+				md: 'calc(var(--radius) - 2px)',
+				sm: 'calc(var(--radius) - 4px)'
+			}
+		}
+	},
+	plugins: [require("tailwindcss-animate")],
+} satisfies Config;
+TAILWIND_EOF
+    
     # Try building with Bun
     echo "🏗️ Building with Bun..."
     if bun run build; then
         echo "✅ Bun build successful!"
+    elif bunx --bun vite build --mode production --base=/static/ --outDir=dist; then
+        echo "✅ Bunx vite build successful!"
     else
-        echo "❌ Bun build failed, trying direct vite..."
-        bunx vite build --mode production --base=/static/ --outDir=dist
+        echo "❌ Bun build failed, trying bun vite directly..."
+        bun vite build --mode production --base=/static/ --outDir=dist || {
+            echo "❌ All Bun methods failed"
+            exit 1
+        }
     fi
     
 else
