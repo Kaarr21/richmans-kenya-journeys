@@ -5,7 +5,7 @@ services:
     env: python
     runtime: python-3.11.9
     buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: gunicorn richman_backend.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: gunicorn richman_backend.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --access-logfile - --error-logfile -
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -18,9 +18,9 @@ services:
           name: richman-db
           property: connectionString
       - key: ALLOWED_HOSTS
-        value: "richman-tours.onrender.com"
+        value: "richman-tours.onrender.com,richmans-kenya-journeys-1.onrender.com"
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://richman-tours.onrender.com"
+        value: "https://richman-tours.onrender.com,https://richmans-kenya-journeys-1.onrender.com"
       - key: EMAIL_HOST
         value: "smtp.gmail.com"
       - key: EMAIL_PORT
@@ -31,10 +31,13 @@ services:
         value: "karokin35@gmail.com"
       - key: EMAIL_HOST_PASSWORD
         value: "dscq pqoy xreg xuyz"
+      # CRITICAL: Set the correct API URL for frontend
       - key: VITE_API_BASE_URL
-        value: "https://richman-tours.onrender.com/api"
+        value: "https://richmans-kenya-journeys-1.onrender.com/api"
       - key: NODE_VERSION
         value: "18.20.4"
+      - key: PORT
+        value: "10000"
 
 databases:
   - name: richman-db

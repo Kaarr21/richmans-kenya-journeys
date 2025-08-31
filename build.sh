@@ -1,19 +1,36 @@
 #!/usr/bin/env bash
-# build.sh - Fixed build script for React + Django deployment
+# build.sh - Enhanced build script with environment validation
 
 set -o errexit
 
 echo "🚀 Building Richman Tours application..."
+
+# Environment validation
+echo "🔍 Environment validation..."
+echo "NODE_VERSION: ${NODE_VERSION:-'not set'}"
+echo "VITE_API_BASE_URL: ${VITE_API_BASE_URL:-'not set'}"
+echo "ALLOWED_HOSTS: ${ALLOWED_HOSTS:-'not set'}"
+echo "DEBUG: ${DEBUG:-'not set'}"
+echo "Working directory: $(pwd)"
+
+# If VITE_API_BASE_URL is not set, derive it from the environment
+if [ -z "$VITE_API_BASE_URL" ]; then
+    if [ -n "$RENDER_SERVICE_NAME" ]; then
+        export VITE_API_BASE_URL="https://${RENDER_SERVICE_NAME}.onrender.com/api"
+        echo "📝 Set VITE_API_BASE_URL to: $VITE_API_BASE_URL"
+    else
+        echo "⚠️ VITE_API_BASE_URL not set and RENDER_SERVICE_NAME not available"
+    fi
+fi
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "🔍 Environment check..."
+echo "🔍 Build environment check..."
 echo "Node version: $(node --version 2>/dev/null || echo 'Not available')"
 echo "Bun version: $(bun --version 2>/dev/null || echo 'Not available')"
-echo "Working directory: $(pwd)"
 
 # Clean everything
 echo "🧹 Cleaning previous builds..."
@@ -96,7 +113,7 @@ cat > package.json << 'EOF'
 }
 EOF
 
-# Create production vite config with correct base path
+# Create production vite config with environment variable injection
 cat > vite.config.ts << 'VITE_EOF'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -135,6 +152,8 @@ export default defineConfig(({ mode }) => ({
   base: '/static/',
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode || 'production'),
+    // Inject environment variables at build time
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
   },
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
@@ -151,7 +170,10 @@ if command -v bun &> /dev/null; then
     bun install --frozen-lockfile || bun install
     
     echo "🏗️ Building React app with Bun..."
-    if bun run build; then
+    echo "Environment during build:"
+    echo "VITE_API_BASE_URL: ${VITE_API_BASE_URL:-'not set'}"
+    
+    if VITE_API_BASE_URL="$VITE_API_BASE_URL" bun run build; then
         echo "✅ Bun build successful!"
     else
         echo "❌ Bun build failed, trying alternatives..."
@@ -161,7 +183,9 @@ else
     echo "📦 Using npm fallback..."
     if command -v npm &> /dev/null; then
         npm install --production=false --silent || npm install
-        npx vite build --mode production
+        echo "Environment during build:"
+        echo "VITE_API_BASE_URL: ${VITE_API_BASE_URL:-'not set'}"
+        VITE_API_BASE_URL="$VITE_API_BASE_URL" npx vite build --mode production
     else
         echo "❌ No package manager available"
         exit 1
@@ -182,9 +206,9 @@ find dist -name "*.js" -o -name "*.css" | head -10
 if [ -f "dist/index.html" ]; then
     echo "🔧 Verifying and fixing asset paths in index.html..."
     
-    # Show original content
-    echo "📄 Original index.html:"
-    cat dist/index.html
+    # Show original content (first few lines only)
+    echo "📄 Original index.html (excerpt):"
+    head -20 dist/index.html
     
     # Fix paths - ensure they start with /static/
     sed -i 's|="/assets/|="/static/assets/|g' dist/index.html
@@ -196,8 +220,8 @@ if [ -f "dist/index.html" ]; then
     sed -i 's|href="/static/static/|href="/static/|g' dist/index.html
     sed -i 's|src="/static/static/|src="/static/|g' dist/index.html
     
-    echo "📄 Fixed index.html:"
-    cat dist/index.html
+    echo "📄 Fixed index.html (excerpt):"
+    head -20 dist/index.html
 else
     echo "❌ index.html not found in dist directory"
     exit 1
@@ -274,6 +298,8 @@ print(f'✅ STATIC_ROOT: {settings.STATIC_ROOT}')
 print(f'✅ STATIC_URL: {settings.STATIC_URL}')
 print(f'✅ STATICFILES_DIRS: {settings.STATICFILES_DIRS}')
 print(f'✅ STATICFILES_STORAGE: {settings.STATICFILES_STORAGE}')
+print(f'✅ DEBUG: {settings.DEBUG}')
+print(f'✅ ALLOWED_HOSTS: {settings.ALLOWED_HOSTS}')
 
 # Verify files exist
 import glob
@@ -295,7 +321,50 @@ if css_files:
     print('Sample CSS files:')
     for f in css_files[:3]:
         print(f'  - {f}')
+
+# Test environment variables
+vite_api_url = os.environ.get('VITE_API_BASE_URL', 'NOT SET')
+print(f'✅ VITE_API_BASE_URL: {vite_api_url}')
+"
+
+# Health check endpoint test
+echo "🏥 Testing server health..."
+python -c "
+import os
+import django
+from django.test.utils import get_runner
+from django.conf import settings
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'richman_backend.settings')
+
+try:
+    django.setup()
+    print('✅ Django setup successful')
+    
+    # Test imports
+    from django.urls import reverse
+    from django.contrib.auth.models import User
+    print('✅ Core Django imports working')
+    
+    # Test database connection
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT 1')
+        result = cursor.fetchone()
+    print('✅ Database connection successful')
+    
+except Exception as e:
+    print(f'❌ Django health check failed: {e}')
+    import traceback
+    traceback.print_exc()
 "
 
 echo "🎉 Build completed successfully!"
 echo "🚀 Static files are ready for serving!"
+
+# Final environment summary
+echo "📋 Final Environment Summary:"
+echo "VITE_API_BASE_URL: ${VITE_API_BASE_URL:-'not set'}"
+echo "ALLOWED_HOSTS: ${ALLOWED_HOSTS:-'not set'}"
+echo "DEBUG: ${DEBUG:-'not set'}"
+echo "CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-'not set'}"
