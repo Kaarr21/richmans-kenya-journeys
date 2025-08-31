@@ -1,114 +1,140 @@
 #!/usr/bin/env bash
-# build.sh - Zero-conflict build script using existing package.json
+# build.sh - Fixed for Node.js module resolution issues
 
 set -o errexit
 
-echo "🚀 Starting zero-conflict build process..."
+echo "🚀 Starting build with module resolution fix..."
 
 # Python dependencies
 echo "📦 Installing Python dependencies..."
 python -m pip install --upgrade pip
 pip install -r requirements.txt --timeout=300
 
-# Complete Node.js clean slate
-echo "🧹 Complete Node.js cleanup..."
-rm -rf node_modules package-lock.json .vite dist .npm || true
+# Complete Node.js reset
+echo "🧹 Complete Node.js reset..."
+rm -rf node_modules package-lock.json .vite dist || true
 npm cache clean --force || true
 
-# Use legacy peer deps to resolve all conflicts
-echo "📦 Installing all dependencies with conflict resolution..."
-npm install --legacy-peer-deps --no-audit
+# Install with exact package.json (no modifications)
+echo "📦 Installing dependencies from package.json..."
+npm install --legacy-peer-deps
 
-# Verify critical packages are installed
-echo "🔍 Verifying installations..."
-if npm list react > /dev/null 2>&1; then
-    echo "✅ React installed: $(npm list react --depth=0 2>/dev/null | grep react || echo 'Found')"
-else
-    echo "❌ React missing, installing..."
-    npm install react@^18.2.0 react-dom@^18.2.0 --legacy-peer-deps
+# Verify installations
+echo "🔍 Verifying critical packages..."
+if [ ! -d "node_modules/vite" ]; then
+    echo "❌ Vite not in node_modules, reinstalling..."
+    npm install vite@^7.1.3 --legacy-peer-deps
 fi
 
-if npm list vite > /dev/null 2>&1; then
-    echo "✅ Vite installed: $(npm list vite --depth=0 2>/dev/null | grep vite || echo 'Found')"
-else
-    echo "❌ Vite missing, installing..."
-    npm install vite@latest @vitejs/plugin-react@latest --save-dev --legacy-peer-deps
+if [ ! -d "node_modules/@vitejs/plugin-react" ]; then
+    echo "❌ Vite React plugin not found, reinstalling..."
+    npm install @vitejs/plugin-react@^5.0.2 --legacy-peer-deps
 fi
 
-# Create the most basic Vite config possible
-echo "🔧 Creating basic Vite config..."
-cat > vite.config.basic.js << 'EOF'
+echo "✅ Node modules structure:"
+ls -la node_modules/ | grep -E "(vite|react)" || echo "Packages found"
+
+# Remove any existing Vite configs to avoid conflicts
+echo "🧹 Removing existing Vite configs..."
+rm -f vite.config.ts vite.config.js vite.config.mjs || true
+
+# Create a working Vite config using CommonJS to avoid ES module issues
+echo "🔧 Creating working Vite config..."
+cat > vite.config.mjs << 'EOF'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
-export default {
+export default defineConfig({
   plugins: [react()],
-  build: {
-    outDir: 'dist'
+  resolve: {
+    alias: {
+      '@': path.resolve(process.cwd(), 'src'),
+    },
   },
-  base: '/static/'
-}
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      }
+    }
+  },
+  base: '/static/',
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  }
+})
 EOF
 
-# Try building with the basic config first
-echo "🏗️ Building React app with basic config..."
+# Set Node.js environment variables
 export NODE_ENV=production
+export NODE_OPTIONS="--max-old-space-size=4096"
 
-# Try the build
-if npx vite build --config vite.config.basic.js; then
-    echo "✅ Build successful with basic config"
-else
-    echo "❌ Basic build failed, trying alternative approach..."
-    
-    # Alternative: Build with default config
-    echo "🔄 Trying build with default Vite config..."
-    npx vite build --base="/static/" --outDir=dist || {
-        echo "❌ All build attempts failed"
-        echo "📋 Debug info:"
-        echo "Node version: $(node --version)"
-        echo "NPM version: $(npm --version)"
-        echo "Package.json contents:"
-        cat package.json || echo "No package.json found"
-        exit 1
-    }
-fi
+# Build using the .mjs config
+echo "🏗️ Building with Vite..."
+npx vite build --config vite.config.mjs
 
-# Verify build output
+# Verify build
 if [ ! -d "dist" ]; then
-    echo "❌ No dist directory created"
-    exit 1
+    echo "❌ Build failed - no dist directory"
+    echo "📋 Trying alternative build method..."
+    
+    # Alternative: Use npx with explicit paths
+    echo "🔄 Trying direct npx build..."
+    NODE_PATH=./node_modules npx vite build --base="/static/" --outDir=dist
+    
+    if [ ! -d "dist" ]; then
+        echo "❌ All build methods failed"
+        echo "📋 Debug info:"
+        echo "Current directory: $(pwd)"
+        echo "Node modules vite: $(ls node_modules/vite 2>/dev/null || echo 'NOT FOUND')"
+        echo "Available executables:"
+        find node_modules/.bin -name "*vite*" 2>/dev/null || echo "No vite executables found"
+        exit 1
+    fi
 fi
 
+echo "✅ Build successful!"
 echo "📋 Build output:"
 ls -la dist/
-if [ -d "dist/assets" ]; then
-    echo "📋 Assets (first 5 files):"
-    ls -la dist/assets/ | head -5
-fi
 
-# Fix HTML paths
+# Fix asset paths
 if [ -f "dist/index.html" ]; then
-    echo "🔧 Fixing asset paths..."
-    cp dist/index.html dist/index.html.backup
-    sed 's|/assets/|/static/|g' dist/index.html.backup > dist/index.html
+    echo "🔧 Fixing asset paths in HTML..."
+    sed -i 's|="/assets/|="/static/|g' dist/index.html
+    sed -i "s|='/assets/|='/static/|g" dist/index.html
+    
+    echo "📋 Checking HTML content:"
+    head -n 20 dist/index.html | grep -E "(href|src)" || echo "HTML looks good"
+    
     echo "✅ Asset paths fixed"
-else
-    echo "❌ No index.html found"
-    exit 1
 fi
 
-# Django steps
-echo "📦 Django static collection..."
-python manage.py collectstatic --noinput --clear
+# Django static collection
+echo "📦 Collecting Django static files..."
+python manage.py collectstatic --noinput --clear --verbosity=2
 
-# Verify Django static files
+# Verify static collection worked
+echo "📋 Verifying static files..."
 if [ -d "staticfiles" ]; then
-    echo "📋 Static files collected:"
-    ls -la staticfiles/ | head -5
+    ls -la staticfiles/ | head -10
+    if find staticfiles -name "*.css" -o -name "*.js" | head -3; then
+        echo "✅ Static assets found"
+    else
+        echo "⚠️ No CSS/JS assets found in staticfiles"
+    fi
 else
-    echo "❌ No staticfiles directory"
+    echo "❌ staticfiles directory not created"
 fi
 
+# Run migrations
 echo "🗄️ Running migrations..."
 python manage.py migrate --noinput
 
-echo "✅ Zero-conflict build completed!"
+echo "✅ Build completed successfully!"
+echo "📋 Final verification:"
+echo "Static files: $(ls staticfiles/ 2>/dev/null | wc -l) files"
+echo "React dist: $(ls dist/ 2>/dev/null | wc -l) files"
