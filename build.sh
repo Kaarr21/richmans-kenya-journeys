@@ -15,15 +15,42 @@ echo "📦 Setting up Node.js..."
 rm -rf node_modules package-lock.json .vite || true
 npm cache clean --force || true
 
-# Install dependencies
+# Install dependencies including PostCSS and Tailwind
 echo "📦 Installing Node.js dependencies..."
 npm install
 
-# Install Vite and plugins explicitly
-echo "📦 Installing Vite explicitly..."
-npm install vite@latest @vitejs/plugin-react@latest
+# Install PostCSS and Tailwind explicitly
+echo "📦 Installing PostCSS and Tailwind..."
+npm install tailwindcss@latest postcss@latest autoprefixer@latest --save-dev
 
-# Create a minimal vite config if it doesn't exist or is problematic
+# Create PostCSS config
+echo "🔧 Creating PostCSS config..."
+cat > postcss.config.js << 'EOF'
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+EOF
+
+# Create Tailwind config
+echo "🔧 Creating Tailwind config..."
+cat > tailwind.config.js << 'EOF'
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+EOF
+
+# Create a minimal vite config that works with PostCSS
 echo "🔧 Creating minimal Vite config..."
 cat > vite.config.js << 'EOF'
 import { defineConfig } from 'vite'
@@ -31,11 +58,25 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  css: {
+    postcss: './postcss.config.js',
+  },
   build: {
     outDir: 'dist',
-    assetsDir: 'assets'
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      }
+    }
   },
-  base: '/static/'
+  base: '/static/',
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 })
 EOF
 
