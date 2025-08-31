@@ -4,7 +4,7 @@ services:
     name: richman-tours
     env: python
     runtime: python-3.11.9
-    buildCommand: ./build.sh
+    buildCommand: chmod +x build.sh && ./build.sh
     startCommand: gunicorn richman_backend.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
       - key: SECRET_KEY
