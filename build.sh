@@ -420,8 +420,55 @@ fi
 echo "📦 Collecting Django static files..."
 python manage.py collectstatic --noinput --clear --verbosity=1
 
+# Verify static files are properly collected
+echo "🔍 Verifying static file collection..."
+if [ -d "staticfiles" ]; then
+    echo "✅ Django staticfiles directory exists"
+    echo "📊 Static files count: $(find staticfiles -type f | wc -l)"
+    
+    # List sample files for verification
+    echo "📋 Sample static files:"
+    find staticfiles -name "*.js" -o -name "*.css" | head -5
+    
+    # Verify React assets are in staticfiles
+    if find staticfiles -name "*.js" | grep -q "assets"; then
+        echo "✅ React JavaScript assets found in staticfiles"
+    else
+        echo "⚠️ React JavaScript assets not found in staticfiles"
+    fi
+    
+    if find staticfiles -name "*.css" | grep -q "assets"; then
+        echo "✅ React CSS assets found in staticfiles"
+    else
+        echo "⚠️ React CSS assets not found in staticfiles"
+    fi
+else
+    echo "❌ Django staticfiles directory not created"
+    exit 1
+fi
+
 echo "🗄️ Running Django migrations..."
 python manage.py migrate --noinput
+
+# Test static file serving
+echo "🧪 Testing static file setup..."
+python -c "
+import os
+from django.conf import settings
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'richman_backend.settings')
+django.setup()
+
+print(f'STATIC_ROOT: {settings.STATIC_ROOT}')
+print(f'STATIC_URL: {settings.STATIC_URL}')
+print(f'STATICFILES_DIRS: {settings.STATICFILES_DIRS}')
+
+# Check if static files exist
+import glob
+js_files = glob.glob(os.path.join(settings.STATIC_ROOT, '**', '*.js'), recursive=True)
+css_files = glob.glob(os.path.join(settings.STATIC_ROOT, '**', '*.css'), recursive=True)
+print(f'Found {len(js_files)} JS files and {len(css_files)} CSS files in STATIC_ROOT')
+"
 
 # Final verification
 echo "🎯 Final verification:"

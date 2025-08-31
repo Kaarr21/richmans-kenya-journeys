@@ -1,4 +1,4 @@
-# settings.py - Fixed version for proper static file serving
+# settings.py - Enhanced static file serving with proper MIME types
 
 import dj_database_url
 import os
@@ -137,38 +137,65 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# Static files - FIXED CONFIGURATION
+# Static files - ENHANCED CONFIGURATION
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Include React build files in static files
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "dist", "assets"),  # Only include the assets folder
+    os.path.join(BASE_DIR, "dist", "assets"),  # React build assets
 ]
 
-# WhiteNoise configuration for better static file serving
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+# Use Django's default static file storage in production for better MIME type handling
+if DEBUG:
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+else:
+    # Use CompressedManifestStaticFilesStorage for production with proper MIME types
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# WhiteNoise configuration - ENHANCED
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br']
 
-# Add MIME type configuration for WhiteNoise
+# Enhanced MIME type configuration for WhiteNoise
 WHITENOISE_MIMETYPES = {
-    '.js': 'application/javascript',
-    '.css': 'text/css',
+    '.js': 'application/javascript; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
     '.woff': 'font/woff',
     '.woff2': 'font/woff2',
     '.ttf': 'font/ttf',
     '.eot': 'application/vnd.ms-fontobject',
     '.otf': 'font/otf',
-    '.svg': 'image/svg+xml',
+    '.svg': 'image/svg+xml; charset=utf-8',
     '.ico': 'image/x-icon',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.gif': 'image/gif',
     '.webp': 'image/webp',
-    '.json': 'application/json',
+    '.json': 'application/json; charset=utf-8',
+    '.map': 'application/json; charset=utf-8',
+    '.txt': 'text/plain; charset=utf-8',
+    '.html': 'text/html; charset=utf-8',
+    '.xml': 'application/xml; charset=utf-8',
+    '.pdf': 'application/pdf',
+    '.zip': 'application/zip',
+    '.gz': 'application/gzip',
+    '.tar': 'application/x-tar',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.ogg': 'audio/ogg',
 }
+
+# Additional static file settings
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
 # Media files
 MEDIA_URL = "/media/"
@@ -204,8 +231,12 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_SSL_REDIRECT = False  # Enable if you want forced HTTPS
+    
+    # Additional security for static files
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
 
-# Logging
+# Enhanced Logging
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -232,6 +263,16 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "whitenoise": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
         "bookings.email_service": {
             "handlers": ["console"],
             "level": "INFO",
@@ -239,3 +280,11 @@ LOGGING = {
         },
     },
 }
+
+# Static file serving debug
+if DEBUG:
+    LOGGING['loggers']['django.contrib.staticfiles'] = {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+        'propagate': False,
+    }
