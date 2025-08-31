@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# build.sh - Deploy YOUR actual React application using alternative methods
+# build.sh - Optimized build script for React + Django deployment
 
 set -o errexit
 
-echo "🚀 Building YOUR actual React application..."
+echo "🚀 Building Richman Tours application..."
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
@@ -11,19 +11,20 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 
 echo "🔍 Environment check..."
-node --version
+echo "Node version: $(node --version 2>/dev/null || echo 'Not available')"
+echo "Bun version: $(bun --version 2>/dev/null || echo 'Not available')"
 echo "Working directory: $(pwd)"
 
 # Clean everything
 echo "🧹 Cleaning previous builds..."
 rm -rf node_modules package-lock.json dist staticfiles .vite || true
 
-# Since npm/vite isn't working, let's use Bun (which Render has available)
-echo "🥟 Trying Bun as alternative to npm..."
+# Use Bun for faster builds
+echo "🥟 Using Bun for frontend build..."
 if command -v bun &> /dev/null; then
-    echo "✅ Bun is available, using it instead of npm"
+    echo "✅ Bun is available"
     
-    # Create package.json with ALL your actual dependencies
+    # Create optimized package.json with ALL required dependencies
     cat > package.json << 'EOF'
 {
   "name": "richman-tours",
@@ -34,6 +35,14 @@ if command -v bun &> /dev/null; then
     "build": "vite build --mode production --base=/static/"
   },
   "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1",
+    "@tanstack/react-query": "^5.56.2",
+    "lucide-react": "^0.462.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0",
+    "class-variance-authority": "^0.7.1",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -62,23 +71,16 @@ if command -v bun &> /dev/null; then
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
-    "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
-    "react-dom": "^18.3.1",
     "react-hook-form": "^7.61.1",
     "react-resizable-panels": "^2.1.9",
-    "react-router-dom": "^6.30.1",
     "recharts": "^2.15.4",
     "sonner": "^1.7.4",
-    "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
     "zod": "^3.25.76"
@@ -97,17 +99,13 @@ if command -v bun &> /dev/null; then
 }
 EOF
 
-    # Install with Bun
+    # Install dependencies with Bun
     echo "📦 Installing dependencies with Bun..."
-    bun install
+    bun install --frozen-lockfile || bun install
     
-    # Create/copy the necessary config files
-    echo "⚙️ Setting up config files..."
-    
-    # Copy vite.config.ts if it exists, or create a working one
-    if [ ! -f "vite.config.ts" ]; then
-        echo "📝 Creating vite.config.ts..."
-        cat > vite.config.ts << 'VITE_EOF'
+    # Create optimized vite config
+    echo "⚙️ Creating optimized Vite config..."
+    cat > vite.config.ts << 'VITE_EOF'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
@@ -126,24 +124,35 @@ export default defineConfig(({ mode }) => ({
     minify: 'terser',
     rollupOptions: {
       output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          query: ['@tanstack/react-query'],
+          ui: ['lucide-react', '@radix-ui/react-slot', 'clsx', 'tailwind-merge']
+        },
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
       }
     },
+    chunkSizeWarningLimit: 1000,
+    target: 'es2020'
   },
   base: mode === 'production' ? '/static/' : '/',
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
   },
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query']
+  }
 }))
 VITE_EOF
-    fi
     
-    # Create postcss.config.js if missing
-    if [ ! -f "postcss.config.js" ]; then
-        echo "📝 Creating postcss.config.js..."
-        cat > postcss.config.js << 'POSTCSS_EOF'
+    # Create PostCSS config
+    cat > postcss.config.js << 'POSTCSS_EOF'
 export default {
   plugins: {
     tailwindcss: {},
@@ -151,23 +160,14 @@ export default {
   },
 }
 POSTCSS_EOF
-    fi
     
-    # Create simplified tailwind.config.ts if the existing one causes issues
-    if [ -f "tailwind.config.ts" ]; then
-        echo "📝 Backing up and simplifying tailwind.config.ts..."
-        mv tailwind.config.ts tailwind.config.ts.backup
-    fi
-    
+    # Create optimized Tailwind config
     cat > tailwind.config.ts << 'TAILWIND_EOF'
 import type { Config } from "tailwindcss";
 
 export default {
 	darkMode: ["class"],
 	content: [
-		"./pages/**/*.{ts,tsx}",
-		"./components/**/*.{ts,tsx}",
-		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
 	],
 	prefix: "",
@@ -213,12 +213,36 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				sidebar: {
+					DEFAULT: 'hsl(var(--sidebar-background))',
+					foreground: 'hsl(var(--sidebar-foreground))',
+					primary: 'hsl(var(--sidebar-primary))',
+					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+					accent: 'hsl(var(--sidebar-accent))',
+					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+					border: 'hsl(var(--sidebar-border))',
+					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			keyframes: {
+				'accordion-down': {
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
+				},
+				'accordion-up': {
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				}
+			},
+			animation: {
+				'accordion-down': 'accordion-down 0.2s ease-out',
+				'accordion-up': 'accordion-up 0.2s ease-out'
 			}
 		}
 	},
@@ -226,62 +250,54 @@ export default {
 } satisfies Config;
 TAILWIND_EOF
     
-    # Try building with Bun
-    echo "🏗️ Building with Bun..."
+    # Build with Bun
+    echo "🏗️ Building React app with Bun..."
     if bun run build; then
         echo "✅ Bun build successful!"
-    elif bunx --bun vite build --mode production --base=/static/ --outDir=dist; then
-        echo "✅ Bunx vite build successful!"
     else
-        echo "❌ Bun build failed, trying bun vite directly..."
-        bun vite build --mode production --base=/static/ --outDir=dist || {
-            echo "❌ All Bun methods failed"
-            exit 1
-        }
+        echo "❌ Bun build failed, trying alternative method..."
+        exit 1
     fi
     
 else
-    echo "❌ Bun not available, using esbuild approach for your app..."
+    echo "❌ Bun not available, falling back to manual build..."
     
-    # Download and install esbuild manually
-    echo "📦 Setting up esbuild manually..."
-    curl -fsSL https://esbuild.github.io/dl/latest/esbuild-linux-64 -o esbuild
-    chmod +x esbuild
+    # Create minimal package.json for npm
+    cat > package.json << 'NPM_EOF'
+{
+  "name": "richman-tours",
+  "type": "module",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1",
+    "@tanstack/react-query": "^5.56.2",
+    "lucide-react": "^0.462.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.19",
+    "@vitejs/plugin-react": "^5.0.2",
+    "typescript": "^5.8.3"
+  }
+}
+NPM_EOF
     
-    # Build your actual React app with esbuild
-    echo "🏗️ Building your React app with esbuild..."
-    
-    # Create the build directory
-    mkdir -p dist/assets
-    
-    # Build your main.tsx file (adjust path if different)
-    ./esbuild src/main.tsx \
-        --bundle \
-        --outdir=dist/assets \
-        --format=esm \
-        --platform=browser \
-        --target=es2020 \
-        --minify \
-        --splitting \
-        --chunk-names=[name]-[hash] \
-        --entry-names=[name]-[hash] \
-        --public-path=/static/ \
-        --loader:.tsx=tsx \
-        --loader:.ts=ts \
-        --loader:.jsx=jsx \
-        --loader:.js=js \
-        --loader:.css=css \
-        --loader:.png=file \
-        --loader:.jpg=file \
-        --loader:.jpeg=file \
-        --loader:.gif=file \
-        --loader:.svg=dataurl \
-        --define:process.env.NODE_ENV=\"production\" \
-        --define:import.meta.env.VITE_API_BASE_URL=\"https://richman-tours.onrender.com/api\" \
-        --external:react \
-        --external:react-dom || {
+    # Try npm
+    if command -v npm &> /dev/null; then
+        echo "📦 Installing with npm..."
+        npm install --production=false --silent || npm install
+        echo "🏗️ Building with npm..."
+        npx vite build --mode production --base=/static/ --outDir=dist
+    else
+        echo "❌ No package manager available, using esbuild fallback..."
+        # Download esbuild
+        curl -fsSL https://esbuild.github.io/dl/latest/esbuild-linux-64 -o esbuild
+        chmod +x esbuild
         
-        echo "❌ esbuild with externals failed, trying without externals..."
+        # Simple build with esbuild
+        mkdir -p dist/assets
         ./esbuild src/main.tsx \
             --bundle \
             --outdir=dist/assets \
@@ -295,40 +311,33 @@ else
             --loader:.jsx=jsx \
             --loader:.js=js \
             --loader:.css=css \
-            --loader:.png=file \
-            --loader:.jpg=file \
-            --loader:.jpeg=file \
-            --loader:.gif=file \
-            --loader:.svg=dataurl \
-            --define:process.env.NODE_ENV=\"production\" \
-            --define:import.meta.env.VITE_API_BASE_URL=\"https://richman-tours.onrender.com/api\"
-    }
+            --define:process.env.NODE_ENV=\"production\"
+    fi
 fi
 
-# Verify build exists
+# Verify build
 if [ ! -d "dist" ] || [ -z "$(ls -A dist 2>/dev/null)" ]; then
     echo "❌ Build failed - no dist directory or empty"
     exit 1
 fi
 
 echo "📋 Build verification:"
-ls -la dist/
-find dist -name "*.js" -o -name "*.css" | head -5
+ls -la dist/ || echo "No dist directory"
+find dist -name "*.js" -o -name "*.css" 2>/dev/null | head -5 || echo "No JS/CSS files found"
 
-# Create or fix index.html for your app
+# Create or fix index.html
 if [ ! -f "dist/index.html" ]; then
-    echo "🔧 Creating index.html for your React app..."
+    echo "🔧 Creating index.html..."
     
-    # Find the built JS and CSS files
-    JS_FILE=$(find dist -name "*.js" | head -1 | sed 's|dist/||')
-    CSS_FILE=$(find dist -name "*.css" | head -1 | sed 's|dist/||')
+    JS_FILE=$(find dist -name "*.js" 2>/dev/null | head -1 | sed 's|dist/||')
+    CSS_FILE=$(find dist -name "*.css" 2>/dev/null | head -1 | sed 's|dist/||')
     
     cat > dist/index.html << EOF
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/static/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Richman Tours</title>
     $([ -n "$CSS_FILE" ] && echo "    <link rel=\"stylesheet\" crossorigin href=\"/static/$CSS_FILE\" />")
@@ -341,7 +350,7 @@ if [ ! -f "dist/index.html" ]; then
 EOF
 fi
 
-# Fix asset paths in index.html
+# Fix asset paths in HTML
 if [ -f "dist/index.html" ]; then
     echo "🔧 Fixing asset paths for Django static serving..."
     sed -i 's|="/assets/|="/static/|g' dist/index.html
@@ -349,43 +358,41 @@ if [ -f "dist/index.html" ]; then
     sed -i 's|src="/assets/|src="/static/|g' dist/index.html
     sed -i 's|="/static/static/|="/static/|g' dist/index.html
     
-    echo "📋 index.html preview:"
-    head -15 dist/index.html
+    echo "📋 Generated index.html:"
+    head -10 dist/index.html
 fi
 
-# Create necessary static files if they don't exist
-echo "📁 Ensuring static file structure..."
+# Ensure static file structure
+echo "📁 Setting up static files structure..."
 mkdir -p dist/assets
 
-# Copy any additional static assets from src if they exist
+# Copy additional assets if they exist
+if [ -d "public" ]; then
+    echo "📂 Copying public assets..."
+    cp -r public/* dist/ 2>/dev/null || true
+fi
+
 if [ -d "src/assets" ]; then
-    echo "📂 Copying src/assets to dist..."
+    echo "📂 Copying src assets..."
     cp -r src/assets/* dist/assets/ 2>/dev/null || true
 fi
 
-# Handle any CSS files that need to be in the right place
-if [ -f "src/index.css" ]; then
-    echo "🎨 Processing main CSS..."
-    cp src/index.css dist/assets/main.css 2>/dev/null || true
-fi
-
-# Django static collection
+# Django operations
 echo "📦 Collecting Django static files..."
-python manage.py collectstatic --noinput --clear --verbosity=2
+python manage.py collectstatic --noinput --clear --verbosity=1
 
-# Run migrations
 echo "🗄️ Running Django migrations..."
 python manage.py migrate --noinput
 
 # Final verification
-echo "📋 Final verification:"
-echo "Dist files: $(find dist -type f 2>/dev/null | wc -l)"
-echo "Static files: $(find staticfiles -type f 2>/dev/null | wc -l)"
+echo "🎯 Final verification:"
+echo "React build files: $(find dist -type f 2>/dev/null | wc -l)"
+echo "Django static files: $(find staticfiles -type f 2>/dev/null | wc -l)"
 
 if [ -d "staticfiles" ]; then
-    echo "Sample static files:"
-    find staticfiles -name "*.js" -o -name "*.css" | head -3
+    echo "✅ Sample static files:"
+    find staticfiles -name "*.js" -o -name "*.css" 2>/dev/null | head -3
 fi
 
-echo "✅ Your React app build completed successfully!"
-echo "🎯 Your actual application should now be deployed!"
+echo "🎉 Build completed successfully!"
+echo "🚀 Richman Tours is ready for deployment!"
