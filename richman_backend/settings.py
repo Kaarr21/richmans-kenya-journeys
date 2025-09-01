@@ -1,4 +1,4 @@
-# settings.py - Simplified and robust static file serving
+# richman_backend/settings.py - PRODUCTION FIXES
 
 import dj_database_url
 import os
@@ -10,7 +10,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost").split(",")
+# CRITICAL FIX: Simplified ALLOWED_HOSTS
+allowed_hosts_str = config("ALLOWED_HOSTS", default="localhost")
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(",") if host.strip()]
+
+# Add the current domain if running on Render
+if not DEBUG and os.environ.get('RENDER_SERVICE_NAME'):
+    render_host = f"{os.environ.get('RENDER_SERVICE_NAME')}.onrender.com"
+    if render_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(render_host)
+
+print(f"DEBUG: {DEBUG}")
+print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -46,7 +57,7 @@ ROOT_URLCONF = "richman_backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "staticfiles"],  # Serve React from staticfiles
+        "DIRS": [BASE_DIR / "staticfiles"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -70,6 +81,7 @@ if "DATABASE_URL" in os.environ:
             conn_health_checks=True,
         )
     }
+    print("Using production database")
 else:
     DATABASES = {
         "default": {
@@ -81,6 +93,7 @@ else:
             "PORT": config("DATABASE_PORT", default="5433"),
         }
     }
+    print("Using local database")
 
 # REST Framework
 REST_FRAMEWORK = {
@@ -99,7 +112,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
-# CORS Configuration
+# CORS Configuration - CRITICAL FIX
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOWED_ORIGINS = [
@@ -110,13 +123,25 @@ if DEBUG:
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
+    print("Using development CORS settings")
 else:
-    cors_origins = config("CORS_ALLOWED_ORIGINS", default="").split(",")
-    CORS_ALLOWED_ORIGINS = [
-        origin.strip() for origin in cors_origins if origin.strip()
-    ]
+    # Production CORS - Allow same domain
+    cors_origins_str = config("CORS_ALLOWED_ORIGINS", default="")
+    if cors_origins_str:
+        CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+    else:
+        CORS_ALLOWED_ORIGINS = []
+    
+    # CRITICAL: Add current domain to CORS if not already there
+    if os.environ.get('RENDER_SERVICE_NAME'):
+        current_domain = f"https://{os.environ.get('RENDER_SERVICE_NAME')}.onrender.com"
+        if current_domain not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(current_domain)
+    
     CORS_ALLOW_CREDENTIALS = True
-    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
+    
+    print(f"Production CORS settings: {CORS_ALLOWED_ORIGINS}")
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -132,41 +157,36 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# ================================
-# STATIC FILES - CRITICAL SECTION
-# ================================
-
 # Static files configuration
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# IMPORTANT: Include React build files in staticfiles collection
+# Add dist to staticfiles dirs only if it exists
 STATICFILES_DIRS = []
-
-# Only add dist directory if it exists (for local development)
 if (BASE_DIR / "dist").exists():
     STATICFILES_DIRS.append(BASE_DIR / "dist")
 
-# Static files finders
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-# Use whitenoise for static file serving in production
+# CRITICAL: Production static file handling
 if DEBUG:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 else:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# WhiteNoise configuration
+# WhiteNoise configuration - ENHANCED
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
     'jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br'
 ]
+WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br']
 
-# Enhanced MIME type configuration
+# Enhanced MIME types
 WHITENOISE_MIMETYPES = {
     '.js': 'application/javascript; charset=utf-8',
     '.mjs': 'application/javascript; charset=utf-8', 
@@ -221,6 +241,7 @@ USE_TZ = True
 # Security settings (production only)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_HSTS_SECONDS = 31536000
@@ -228,7 +249,7 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     X_FRAME_OPTIONS = 'DENY'
 
-# Logging configuration
+# Enhanced logging for production debugging
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -260,5 +281,16 @@ LOGGING = {
             "level": "INFO", 
             "propagate": False,
         },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
     },
 }
+
+print("Settings loaded successfully")
+print(f"Static URL: {STATIC_URL}")
+print(f"Static Root: {STATIC_ROOT}")
+print(f"Media URL: {MEDIA_URL}")
+print(f"Media Root: {MEDIA_ROOT}")

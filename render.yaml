@@ -1,5 +1,5 @@
+# render.yaml - FIXED Configuration
 services:
-  # Full-stack Django + React App
   - type: web
     name: richman-tours
     env: python
@@ -17,10 +17,11 @@ services:
         fromDatabase:
           name: richman-db
           property: connectionString
+      # CRITICAL FIX: Use the SAME domain for both frontend and API
       - key: ALLOWED_HOSTS
-        value: "richman-tours.onrender.com,richmans-kenya-journeys-1.onrender.com"
+        value: "richmans-kenya-journeys-1.onrender.com"
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://richman-tours.onrender.com,https://richmans-kenya-journeys-1.onrender.com"
+        value: "https://richmans-kenya-journeys-1.onrender.com"
       - key: EMAIL_HOST
         value: "smtp.gmail.com"
       - key: EMAIL_PORT
@@ -31,7 +32,7 @@ services:
         value: "karokin35@gmail.com"
       - key: EMAIL_HOST_PASSWORD
         value: "dscq pqoy xreg xuyz"
-      # CRITICAL: Set the correct API URL for frontend
+      # CRITICAL FIX: Frontend should call API on SAME domain
       - key: VITE_API_BASE_URL
         value: "https://richmans-kenya-journeys-1.onrender.com/api"
       - key: NODE_VERSION
