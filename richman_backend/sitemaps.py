@@ -1,3 +1,4 @@
+# richman_backend/sitemaps.py - New file for SEO
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
@@ -10,7 +11,9 @@ class StaticViewSitemap(Sitemap):
         return ['index', 'gallery', 'book-tour']
 
     def location(self, item):
-        return f'/{item}' if item != 'index' else '/'
+        if item == 'index':
+            return '/'
+        return f'/{item}/'
 
 class LocationSitemap(Sitemap):
     changefreq = "weekly"
@@ -18,11 +21,14 @@ class LocationSitemap(Sitemap):
     protocol = 'https'
 
     def items(self):
-        from locations.models import Location
-        return Location.objects.all()
+        try:
+            from locations.models import Location
+            return Location.objects.all()
+        except:
+            return []
 
     def lastmod(self, obj):
         return obj.updated_at
 
     def location(self, obj):
-        return f'/location/{obj.id}'
+        return f'/gallery/'  # Since all locations show in gallery

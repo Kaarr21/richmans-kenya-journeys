@@ -1,4 +1,4 @@
-# richman_backend/urls.py - PRODUCTION FIXES
+# richman_backend/urls.py - PRODUCTION FIXES with Sitemap
 
 from django.contrib import admin
 from django.urls import path, include, re_path
@@ -6,9 +6,20 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.http import Http404, HttpResponse
-from django.views.static import serve as static_serve
+from django.views.static import serve
+from django.contrib.sitemaps.views import sitemap
 import os
 import logging
+
+# Import sitemaps
+try:
+    from .sitemaps import StaticViewSitemap, LocationSitemap
+    sitemaps = {
+        'static': StaticViewSitemap,
+        'locations': LocationSitemap,
+    }
+except ImportError:
+    sitemaps = {}
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +42,11 @@ def serve_react_app(request, path=''):
     if path.startswith('admin'):
         logger.warning(f"Admin route not found: {path}")
         raise Http404("Admin route not found")
+    
+    # Don't serve React for sitemap
+    if path.startswith('sitemap'):
+        logger.warning(f"Sitemap route not found: {path}")
+        raise Http404("Sitemap not found")
         
     # Don't serve React for static/media files
     static_extensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.woff', '.woff2', '.ttf', '.map', '.json']
@@ -52,10 +68,27 @@ def serve_react_app(request, path=''):
     # Serve React index.html for all other routes
     return TemplateView.as_view(template_name='index.html')(request)
 
-# URL patterns - ENHANCED with health check
+# Enhanced media file serving for production
+def serve_media(request, path):
+    """Serve media files with proper headers"""
+    try:
+        response = serve(request, path, document_root=settings.MEDIA_ROOT)
+        # Add cache headers for images
+        if any(path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+            response['Cache-Control'] = 'public, max-age=31536000'
+            response['Access-Control-Allow-Origin'] = '*'
+        return response
+    except Http404:
+        logger.error(f"Media file not found: {path}")
+        raise
+
+# URL patterns - ENHANCED with health check and sitemap
 urlpatterns = [
     # Health check for monitoring
     path('health/', health_check, name='health-check'),
+    
+    # SEO - Sitemap
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     
     # Django admin
     path('admin/', admin.site.urls),
@@ -77,41 +110,17 @@ else:
     # Production - let WhiteNoise handle static files, but serve media files
     logger.info("Production: WhiteNoise handling static files")
     
-    # Serve media files in production
-    urlpatterns += [
-        re_path(r'^media/(?P<path>.*)$', serve, {
-            'document_root': settings.MEDIA_ROOT,
-        }, name='media'),
-    ]
-    def serve_media(request, path):
-        response = static_serve(request, path, document_root=settings.MEDIA_ROOT)
-        # Add cache headers for images
-        if any(path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
-            response['Cache-Control'] = 'public, max-age=31536000'
-        return response
-    
+    # Serve media files in production with enhanced handling
     urlpatterns += [
         re_path(r'^media/(?P<path>.*)$', serve_media, name='media'),
     ]
 
 # React app catch-all - MUST BE LAST
 urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {
-        'document_root': settings.MEDIA_ROOT,
-        'show_indexes': False,
-    }, name='media'),
-]
-
-from django.contrib.sitemaps.views import sitemap
-from .sitemaps import StaticViewSitemap, LocationSitemap
-
-sitemaps = {
-    'static': StaticViewSitemap,
-    'locations': LocationSitemap,
-}
-
-urlpatterns += [
-    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    # Handle paths with trailing slash
+    re_path(r'^(?P<path>.*)/$', serve_react_app, name='react-app-slash'),
+    # Handle paths without trailing slash
+    re_path(r'^(?P<path>.*)$', serve_react_app, name='react-app'),
 ]
 
 logger.info(f"URL patterns loaded. Total patterns: {len(urlpatterns)}")

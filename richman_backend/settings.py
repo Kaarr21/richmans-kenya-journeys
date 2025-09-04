@@ -1,4 +1,4 @@
-# richman_backend/settings.py - PRODUCTION FIXES
+# richman_backend/settings.py - PRODUCTION FIXES with proper CORS
 
 import dj_database_url
 import os
@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sitemaps",  # Added for SEO
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
@@ -112,27 +113,23 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
-# CORS Configuration - CRITICAL FIX
+# CORS Configuration - CRITICAL FIX for Mobile
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
     print("Using development CORS settings")
 else:
-    # Production CORS - Allow same domain
+    # Production CORS - FIXED for mobile compatibility
     cors_origins_str = config("CORS_ALLOWED_ORIGINS", default="")
     if cors_origins_str:
         CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
     else:
-        CORS_ALLOWED_ORIGINS = ["https://richmans-kenya-journeys-1.onrender.com",
-        "https://www.richmans-kenya-journeys-1.onrender.com",  # www version
-]
+        CORS_ALLOWED_ORIGINS = []
     
     # CRITICAL: Add current domain to CORS if not already there
     if os.environ.get('RENDER_SERVICE_NAME'):
@@ -140,36 +137,35 @@ else:
         if current_domain not in CORS_ALLOWED_ORIGINS:
             CORS_ALLOWED_ORIGINS.append(current_domain)
     
+    # Mobile-specific CORS settings
     CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOW_HEADERS = [
+        "accept",
+        "accept-encoding",
+        "authorization",
+        "content-type",
+        "dnt",
+        "origin",
+        "user-agent",
+        "x-csrftoken",
+        "x-requested-with",
+        "cache-control",
+        "pragma",
+    ]
+    CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
+    CORS_PREFLIGHT_MAX_AGE = 86400
+    
+    # CSRF settings for mobile
     CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    
+    print(f"Production CORS settings: {CORS_ALLOWED_ORIGINS}")
 
-    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
-    SECURE_REFERRER_POLICY = "same-origin"
-
-    # Fix session configuration for mobile
+# Session configuration for mobile compatibility
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax' if not DEBUG else 'None'
-CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SAMESITE = 'Lax' if not DEBUG else 'None'
-    
-print(f"Production CORS settings: {CORS_ALLOWED_ORIGINS}")
-
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding", 
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-    "cache-control",
-    "pragma",
-]
-CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
-CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Static files configuration
 STATIC_URL = "/static/"
@@ -198,9 +194,8 @@ WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
     'jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br'
 ]
 WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
-WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br']
 
-# Enhanced MIME types
+# Enhanced MIME types for better mobile compatibility
 WHITENOISE_MIMETYPES = {
     '.js': 'application/javascript; charset=utf-8',
     '.mjs': 'application/javascript; charset=utf-8', 
@@ -224,7 +219,7 @@ WHITENOISE_MIMETYPES = {
     '.xml': 'application/xml; charset=utf-8',
 }
 
-# Media files
+# Media files - FIXED for production
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -232,10 +227,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_ROOT.mkdir(exist_ok=True)
 (MEDIA_ROOT / "locations").mkdir(exist_ok=True)
 
-# File upload limits
+# File upload settings - optimized for mobile
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 FILE_UPLOAD_PERMISSIONS = 0o644
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
 
@@ -264,6 +258,10 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     X_FRAME_OPTIONS = 'DENY'
+    
+    # Mobile-specific security settings
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+    SECURE_REFERRER_POLICY = "same-origin"
 
 # Enhanced logging for production debugging
 LOGGING = {
@@ -292,14 +290,9 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "whitenoise": {
+        "corsheaders": {
             "handlers": ["console"],
-            "level": "INFO", 
-            "propagate": False,
-        },
-        "django.request": {
-            "handlers": ["console"],
-            "level": "ERROR",
+            "level": "DEBUG" if DEBUG else "INFO",
             "propagate": False,
         },
     },
