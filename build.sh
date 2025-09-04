@@ -367,4 +367,4 @@ echo "📋 Final Environment Summary:"
 echo "VITE_API_BASE_URL: ${VITE_API_BASE_URL:-'not set'}"
 echo "ALLOWED_HOSTS: ${ALLOWED_HOSTS:-'not set'}"
 echo "DEBUG: ${DEBUG:-'not set'}"
-echo "CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-'not set'}
+echo "CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-'not set'}"
