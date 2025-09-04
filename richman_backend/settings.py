@@ -130,7 +130,9 @@ else:
     if cors_origins_str:
         CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
     else:
-        CORS_ALLOWED_ORIGINS = []
+        CORS_ALLOWED_ORIGINS = ["https://richmans-kenya-journeys-1.onrender.com",
+        "https://www.richmans-kenya-journeys-1.onrender.com",  # www version
+]
     
     # CRITICAL: Add current domain to CORS if not already there
     if os.environ.get('RENDER_SERVICE_NAME'):
@@ -140,8 +142,18 @@ else:
     
     CORS_ALLOW_CREDENTIALS = True
     CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
+
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+    SECURE_REFERRER_POLICY = "same-origin"
+
+    # Fix session configuration for mobile
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax' if not DEBUG else 'None'
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax' if not DEBUG else 'None'
     
-    print(f"Production CORS settings: {CORS_ALLOWED_ORIGINS}")
+print(f"Production CORS settings: {CORS_ALLOWED_ORIGINS}")
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -153,6 +165,8 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    "cache-control",
+    "pragma",
 ]
 CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 CORS_PREFLIGHT_MAX_AGE = 86400
@@ -222,6 +236,8 @@ MEDIA_ROOT.mkdir(exist_ok=True)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
 
 # Email configuration
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

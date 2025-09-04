@@ -125,7 +125,7 @@ class ApiClient {
   private token: string | null = null;
 
   constructor() {
-    this.token = localStorage.getItem('token');
+    this.token = localStorage.getItem('token') || sessionStorage.getItem('token');
   }
 
   private async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -134,8 +134,12 @@ class ApiClient {
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
         ...(this.token && { Authorization: `Token ${this.token}` }),
       },
+      credentials: 'include', // Important for mobile
+      mode: 'cors',
       ...options,
     };
 
@@ -149,6 +153,12 @@ class ApiClient {
         } catch {
           errorData = { error: `HTTP error! status: ${response.status}` };
         }
+
+        if (response.status === 401) {
+          this.clearToken();
+          window.location.href = '/admin'; // Redirect to login
+        }
+
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       
@@ -202,6 +212,8 @@ class ApiClient {
       throw new Error('Network error occurred');
     }
   }
+
+  
 
   // Auth methods
   async login(email: string, password: string): Promise<AuthResponse> {

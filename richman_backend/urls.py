@@ -6,7 +6,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.http import Http404, HttpResponse
-from django.views.static import serve
+from django.views.static import serve as static_serve
 import os
 import logging
 
@@ -83,13 +83,35 @@ else:
             'document_root': settings.MEDIA_ROOT,
         }, name='media'),
     ]
+    def serve_media(request, path):
+        response = static_serve(request, path, document_root=settings.MEDIA_ROOT)
+        # Add cache headers for images
+        if any(path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+            response['Cache-Control'] = 'public, max-age=31536000'
+        return response
+    
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve_media, name='media'),
+    ]
 
 # React app catch-all - MUST BE LAST
 urlpatterns += [
-    # Handle paths with trailing slash
-    re_path(r'^(?P<path>.*)/$', serve_react_app, name='react-app-slash'),
-    # Handle paths without trailing slash
-    re_path(r'^(?P<path>.*)$', serve_react_app, name='react-app'),
+    re_path(r'^media/(?P<path>.*)$', serve, {
+        'document_root': settings.MEDIA_ROOT,
+        'show_indexes': False,
+    }, name='media'),
+]
+
+from django.contrib.sitemaps.views import sitemap
+from .sitemaps import StaticViewSitemap, LocationSitemap
+
+sitemaps = {
+    'static': StaticViewSitemap,
+    'locations': LocationSitemap,
+}
+
+urlpatterns += [
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 
 logger.info(f"URL patterns loaded. Total patterns: {len(urlpatterns)}")

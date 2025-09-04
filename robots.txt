@@ -1,15 +1,17 @@
 User-agent: *
 Allow: /
 
-# Allow access to static assets
-Allow: /static/
-Allow: /media/
-Allow: /images/
-Allow: /css/
-Allow: /js/
+# Important pages
+Allow: /gallery/
+Allow: /book-tour/
+Allow: /locations/
+
+# Disallow admin and API
+Disallow: /admin/
+Disallow: /api/
 
 # Sitemap location
-Sitemap: https://richman-tours.com/sitemap.xml
+Sitemap: https://richmans-kenya-journeys-1.onrender.com/sitemap.xml
 
-# Crawl delay (optional - be respectful to server resources)
+# Crawl delay
 Crawl-delay: 1

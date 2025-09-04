@@ -12,6 +12,7 @@ from .models import Profile
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@csrf_exempt
 def login_view(request):
     serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
@@ -21,7 +22,7 @@ def login_view(request):
         try:
             user = User.objects.get(email=email)
             user = authenticate(username=user.username, password=password)
-            if user:
+            if user and user.is_active:
                 token, created = Token.objects.get_or_create(user=user)
                 return Response({
                     'token': token.key,
