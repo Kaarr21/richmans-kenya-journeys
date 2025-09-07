@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => ({
   },
   base: mode === 'production' ? '/static/' : '/',
   server: {
-    port: 5173,
+    port: 8080,
     host: '0.0.0.0'
   },
   define: {
