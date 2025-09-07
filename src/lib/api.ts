@@ -1,13 +1,41 @@
-// src/lib/api.ts - FIXED for production deployment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD 
-    ? 'https://richmans-kenya-journeys-1.onrender.com/api'  // Production URL
-    : 'http://localhost:8000/api'  // Development URL
-  );
+// src/lib/api.ts - ENHANCED for reliable production deployment
 
-console.log('Environment:', import.meta.env.MODE);
-console.log('API Base URL:', API_BASE_URL);
-console.log('Is Production:', import.meta.env.PROD);
+// CRITICAL: More robust API URL detection
+const getApiBaseUrl = (): string => {
+  // First, try the build-time injected environment variable
+  const buildTimeUrl = import.meta.env.VITE_API_BASE_URL;
+  
+  // Detect if we're in production by checking the hostname
+  const isProduction = window.location.hostname.includes('onrender.com') || 
+                      import.meta.env.PROD || 
+                      import.meta.env.MODE === 'production';
+  
+  console.log('🔍 API URL Detection:');
+  console.log('- Build-time VITE_API_BASE_URL:', buildTimeUrl);
+  console.log('- Current hostname:', window.location.hostname);
+  console.log('- import.meta.env.PROD:', import.meta.env.PROD);
+  console.log('- import.meta.env.MODE:', import.meta.env.MODE);
+  console.log('- Detected as production:', isProduction);
+  
+  if (buildTimeUrl && buildTimeUrl !== 'undefined' && buildTimeUrl.trim() !== '') {
+    console.log('✅ Using build-time API URL:', buildTimeUrl);
+    return buildTimeUrl.trim();
+  }
+  
+  if (isProduction) {
+    const productionUrl = 'https://richmans-kenya-journeys-1.onrender.com/api';
+    console.log('🔧 Using fallback production URL:', productionUrl);
+    return productionUrl;
+  }
+  
+  const developmentUrl = 'http://localhost:8000/api';
+  console.log('🔧 Using development URL:', developmentUrl);
+  return developmentUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log('🚀 Final API Base URL:', API_BASE_URL);
 
 // Define interfaces (keeping your existing interfaces)
 export interface BookingData {
@@ -134,67 +162,94 @@ class ApiClient {
   constructor() {
     // Check both localStorage and sessionStorage for token
     this.token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (this.token) {
+      console.log('🔐 Found existing auth token');
+    }
   }
 
   private async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
-    // Enhanced headers for production
+    // Enhanced headers for better compatibility
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Cache-Control': 'no-cache',
-        'X-Requested-With': 'XMLHttpRequest', // Helps with CORS
+        'X-Requested-With': 'XMLHttpRequest',
         ...(this.token && { Authorization: `Token ${this.token}` }),
       },
       mode: 'cors',
-      credentials: 'omit', // Changed from 'include' for better compatibility
+      credentials: 'omit', // Simplified for better compatibility
       ...options,
     };
 
     try {
-      console.log(`Making request to: ${url}`, { method: config.method || 'GET' });
+      console.log(`📡 Making request to: ${url}`, { 
+        method: config.method || 'GET',
+        hasAuth: !!this.token 
+      });
       
       const response = await fetch(url, config);
       
-      console.log(`Response status: ${response.status} for ${url}`);
+      console.log(`📡 Response: ${response.status} ${response.statusText} for ${endpoint}`);
       
       if (!response.ok) {
         let errorData: ApiErrorResponse;
         try {
           errorData = await response.json();
         } catch {
-          errorData = { error: `HTTP error! status: ${response.status}` };
+          errorData = { 
+            error: `HTTP ${response.status}: ${response.statusText}` 
+          };
         }
 
         // Handle 401 Unauthorized
         if (response.status === 401) {
-          console.warn('Unauthorized request, clearing token');
+          console.warn('🔐 Unauthorized request, clearing token');
           this.clearToken();
           if (window.location.pathname.includes('/admin')) {
-            window.location.reload(); // Reload admin page to show login
+            window.location.reload();
           }
         }
 
-        console.error('API Error:', errorData);
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        // Enhanced error logging
+        console.error('❌ API Error:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData.error,
+          details: errorData.details
+        });
+
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
       
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
-        console.log(`Successful response from ${url}:`, data);
+        console.log(`✅ Success response from ${endpoint}:`, {
+          dataType: Array.isArray(data) ? 'array' : typeof data,
+          keys: typeof data === 'object' && data ? Object.keys(data) : 'n/a'
+        });
         return data as T;
       }
       
+      console.log(`✅ Non-JSON response from ${endpoint}`);
       return {} as T;
+      
     } catch (error) {
-      console.error(`Request failed for ${url}:`, error);
+      console.error(`❌ Request failed for ${url}:`, error);
+      
       if (error instanceof Error) {
-        // Add more context to network errors
-        if (error.message.includes('fetch')) {
-          throw new Error(`Network error: Unable to connect to server. Please check your internet connection.`);
+        // More specific error messages
+        if (error.message.includes('fetch') || error.message.includes('network')) {
+          const isLocal = url.includes('localhost');
+          throw new Error(
+            isLocal 
+              ? 'Cannot connect to local server. Make sure Django is running on http://localhost:8000'
+              : 'Network error: Unable to connect to server. Please check your internet connection.'
+          );
         }
         throw error;
       }
@@ -216,7 +271,7 @@ class ApiClient {
     };
 
     try {
-      console.log(`Making file upload request to: ${url}`);
+      console.log(`📎 Making file upload request to: ${url}`);
       
       const response = await fetch(url, config);
       
@@ -228,7 +283,7 @@ class ApiClient {
           errorData = { error: `HTTP error! status: ${response.status}` };
         }
         
-        console.error('File upload error:', errorData);
+        console.error('❌ File upload error:', errorData);
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       
@@ -239,7 +294,7 @@ class ApiClient {
       
       return {} as T;
     } catch (error) {
-      console.error(`File upload failed for ${url}:`, error);
+      console.error(`❌ File upload failed for ${url}:`, error);
       if (error instanceof Error) {
         throw error;
       }
@@ -249,7 +304,7 @@ class ApiClient {
 
   // Auth methods
   async login(email: string, password: string): Promise<AuthResponse> {
-    console.log('Attempting login...');
+    console.log('🔐 Attempting login for:', email);
     const response = await this.request<AuthResponse>('/auth/login/', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -258,17 +313,19 @@ class ApiClient {
     if (response.token) {
       this.token = response.token;
       localStorage.setItem('token', this.token);
-      console.log('Login successful, token stored');
+      console.log('✅ Login successful, token stored');
     }
     
     return response;
   }
 
   async logout(): Promise<{ message: string }> {
+    console.log('🔐 Logging out...');
     const response = await this.request<{ message: string }>('/auth/logout/', { 
       method: 'POST' 
     });
     this.clearToken();
+    console.log('✅ Logged out successfully');
     return response;
   }
 
@@ -278,7 +335,7 @@ class ApiClient {
 
   // Booking methods
   async createBooking(bookingData: BookingData): Promise<BookingResponse> {
-    console.log('Creating booking:', bookingData);
+    console.log('📝 Creating booking:', bookingData.destination);
     return this.request<BookingResponse>('/bookings/', {
       method: 'POST',
       body: JSON.stringify(bookingData),
@@ -314,7 +371,7 @@ class ApiClient {
 
   // Location methods
   async getLocations(): Promise<{ results: LocationResponse[]; count: number }> {
-    console.log('Fetching locations...');
+    console.log('🗺️ Fetching locations...');
     const response = await this.request<{ results: LocationResponse[]; count: number }>('/locations/');
     
     // Ensure backward compatibility by setting image_url if not present
@@ -323,11 +380,12 @@ class ApiClient {
       image_url: location.image_url || location.primary_image_url || '',
     }));
     
+    console.log(`✅ Loaded ${response.results.length} locations`);
     return response;
   }
 
   async createLocation(formData: FormData): Promise<LocationResponse> {
-    console.log('Creating location with form data');
+    console.log('📸 Creating location with images');
     const response = await this.requestWithoutContentType<LocationResponse>('/locations/', {
       method: 'POST',
       body: formData,
@@ -405,13 +463,34 @@ class ApiClient {
   setToken(token: string): void {
     this.token = token;
     localStorage.setItem('token', token);
+    console.log('🔐 Token set and stored');
   }
 
   clearToken(): void {
     this.token = null;
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
+    console.log('🔐 Token cleared');
+  }
+
+  // Debug method to check current configuration
+  getDebugInfo() {
+    return {
+      apiBaseUrl: API_BASE_URL,
+      hasToken: !!this.token,
+      hostname: window.location.hostname,
+      isProduction: window.location.hostname.includes('onrender.com'),
+      envMode: import.meta.env.MODE,
+      envProd: import.meta.env.PROD,
+      buildTimeApiUrl: import.meta.env.VITE_API_BASE_URL
+    };
   }
 }
 
 export const apiClient = new ApiClient();
+
+// Export debug function for console debugging
+(window as any).apiDebug = () => {
+  console.log('🔧 API Client Debug Info:', apiClient.getDebugInfo());
+  return apiClient.getDebugInfo();
+};

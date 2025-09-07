@@ -1,4 +1,4 @@
-# render.yaml - FIXED Configuration for deployment
+# render.yaml - ENHANCED Configuration for deployment
 services:
   - type: web
     name: richman-tours
@@ -35,14 +35,23 @@ services:
       # CRITICAL: API URL must match the deployed domain
       - key: VITE_API_BASE_URL
         value: "https://richmans-kenya-journeys-1.onrender.com/api"
+      # Enhanced build environment variables
       - key: NODE_VERSION
         value: "18.20.4"
+      - key: NODE_ENV
+        value: "production"
       - key: PORT
         value: "10000"
       - key: RENDER
         value: "true"
-      - key: NODE_ENV
+      # Service name for dynamic URL construction
+      - key: RENDER_SERVICE_NAME
+        value: "richmans-kenya-journeys-1"
+      # Additional environment markers
+      - key: ENVIRONMENT
         value: "production"
+      - key: IS_PRODUCTION
+        value: "true"
 
 databases:
   - name: richman-db
