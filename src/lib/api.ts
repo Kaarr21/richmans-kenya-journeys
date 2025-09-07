@@ -1,8 +1,15 @@
-// src/lib/api.ts - Enhanced with location update and complete CRUD
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+// src/lib/api.ts - FIXED for production deployment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD 
+    ? 'https://richmans-kenya-journeys-1.onrender.com/api'  // Production URL
+    : 'http://localhost:8000/api'  // Development URL
+  );
 
+console.log('Environment:', import.meta.env.MODE);
 console.log('API Base URL:', API_BASE_URL);
-// Define interfaces
+console.log('Is Production:', import.meta.env.PROD);
+
+// Define interfaces (keeping your existing interfaces)
 export interface BookingData {
   customer_name: string;
   customer_email: string;
@@ -60,7 +67,7 @@ export interface LocationResponse extends LocationData {
   id: string;
   images: LocationImage[];
   primary_image_url?: string;
-  image_url?: string; // For backward compatibility
+  image_url?: string;
   user_id?: string;
   created_at: string;
   updated_at: string;
@@ -125,26 +132,33 @@ class ApiClient {
   private token: string | null = null;
 
   constructor() {
+    // Check both localStorage and sessionStorage for token
     this.token = localStorage.getItem('token') || sessionStorage.getItem('token');
   }
 
   private async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     
+    // Enhanced headers for production
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Cache-Control': 'no-cache',
+        'X-Requested-With': 'XMLHttpRequest', // Helps with CORS
         ...(this.token && { Authorization: `Token ${this.token}` }),
       },
-      credentials: 'include', // Important for mobile
       mode: 'cors',
+      credentials: 'omit', // Changed from 'include' for better compatibility
       ...options,
     };
 
     try {
+      console.log(`Making request to: ${url}`, { method: config.method || 'GET' });
+      
       const response = await fetch(url, config);
+      
+      console.log(`Response status: ${response.status} for ${url}`);
       
       if (!response.ok) {
         let errorData: ApiErrorResponse;
@@ -154,25 +168,37 @@ class ApiClient {
           errorData = { error: `HTTP error! status: ${response.status}` };
         }
 
+        // Handle 401 Unauthorized
         if (response.status === 401) {
+          console.warn('Unauthorized request, clearing token');
           this.clearToken();
-          window.location.href = '/admin'; // Redirect to login
+          if (window.location.pathname.includes('/admin')) {
+            window.location.reload(); // Reload admin page to show login
+          }
         }
 
+        console.error('API Error:', errorData);
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
-        return response.json() as Promise<T>;
+        const data = await response.json();
+        console.log(`Successful response from ${url}:`, data);
+        return data as T;
       }
       
-      return {} as T; // For responses with no content
+      return {} as T;
     } catch (error) {
+      console.error(`Request failed for ${url}:`, error);
       if (error instanceof Error) {
+        // Add more context to network errors
+        if (error.message.includes('fetch')) {
+          throw new Error(`Network error: Unable to connect to server. Please check your internet connection.`);
+        }
         throw error;
       }
-      throw new Error('Network error occurred');
+      throw new Error('Unknown network error occurred');
     }
   }
 
@@ -181,12 +207,17 @@ class ApiClient {
     
     const config: RequestInit = {
       headers: {
+        'X-Requested-With': 'XMLHttpRequest',
         ...(this.token && { Authorization: `Token ${this.token}` }),
       },
+      mode: 'cors',
+      credentials: 'omit',
       ...options,
     };
 
     try {
+      console.log(`Making file upload request to: ${url}`);
+      
       const response = await fetch(url, config);
       
       if (!response.ok) {
@@ -196,6 +227,8 @@ class ApiClient {
         } catch {
           errorData = { error: `HTTP error! status: ${response.status}` };
         }
+        
+        console.error('File upload error:', errorData);
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
       
@@ -206,17 +239,17 @@ class ApiClient {
       
       return {} as T;
     } catch (error) {
+      console.error(`File upload failed for ${url}:`, error);
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Network error occurred');
+      throw new Error('File upload failed');
     }
   }
 
-  
-
   // Auth methods
   async login(email: string, password: string): Promise<AuthResponse> {
+    console.log('Attempting login...');
     const response = await this.request<AuthResponse>('/auth/login/', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -225,6 +258,7 @@ class ApiClient {
     if (response.token) {
       this.token = response.token;
       localStorage.setItem('token', this.token);
+      console.log('Login successful, token stored');
     }
     
     return response;
@@ -234,8 +268,7 @@ class ApiClient {
     const response = await this.request<{ message: string }>('/auth/logout/', { 
       method: 'POST' 
     });
-    this.token = null;
-    localStorage.removeItem('token');
+    this.clearToken();
     return response;
   }
 
@@ -245,6 +278,7 @@ class ApiClient {
 
   // Booking methods
   async createBooking(bookingData: BookingData): Promise<BookingResponse> {
+    console.log('Creating booking:', bookingData);
     return this.request<BookingResponse>('/bookings/', {
       method: 'POST',
       body: JSON.stringify(bookingData),
@@ -280,6 +314,7 @@ class ApiClient {
 
   // Location methods
   async getLocations(): Promise<{ results: LocationResponse[]; count: number }> {
+    console.log('Fetching locations...');
     const response = await this.request<{ results: LocationResponse[]; count: number }>('/locations/');
     
     // Ensure backward compatibility by setting image_url if not present
@@ -292,12 +327,12 @@ class ApiClient {
   }
 
   async createLocation(formData: FormData): Promise<LocationResponse> {
+    console.log('Creating location with form data');
     const response = await this.requestWithoutContentType<LocationResponse>('/locations/', {
       method: 'POST',
       body: formData,
     });
 
-    // Ensure backward compatibility
     return {
       ...response,
       image_url: response.image_url || response.primary_image_url || '',
@@ -310,7 +345,6 @@ class ApiClient {
       body: JSON.stringify(data),
     });
 
-    // Ensure backward compatibility
     return {
       ...response,
       image_url: response.image_url || response.primary_image_url || '',
@@ -376,6 +410,7 @@ class ApiClient {
   clearToken(): void {
     this.token = null;
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
   }
 }
 

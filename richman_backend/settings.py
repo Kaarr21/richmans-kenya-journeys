@@ -1,4 +1,4 @@
-# richman_backend/settings.py - PRODUCTION FIXES with proper CORS
+# richman_backend/settings.py - FIXED for production
 
 import dj_database_url
 import os
@@ -10,15 +10,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-# CRITICAL FIX: Simplified ALLOWED_HOSTS
+# FIXED: Ensure proper allowed hosts
 allowed_hosts_str = config("ALLOWED_HOSTS", default="localhost")
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(",") if host.strip()]
 
-# Add the current domain if running on Render
-if not DEBUG and os.environ.get('RENDER_SERVICE_NAME'):
-    render_host = f"{os.environ.get('RENDER_SERVICE_NAME')}.onrender.com"
-    if render_host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(render_host)
+# Add render domains
+if os.environ.get('RENDER'):
+    ALLOWED_HOSTS.extend([
+        'richmans-kenya-journeys-1.onrender.com',
+        '.onrender.com',
+    ])
 
 print(f"DEBUG: {DEBUG}")
 print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
@@ -30,7 +31,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.sitemaps",  # Added for SEO
+    "django.contrib.sitemaps",
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
@@ -113,32 +114,27 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
-# CORS Configuration - CRITICAL FIX for Mobile
+# CORS Configuration - FIXED for production
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
-    print("Using development CORS settings")
+    print("Development: CORS allow all origins")
 else:
-    # Production CORS - FIXED for mobile compatibility
+    # Production CORS - CRITICAL FIX
+    CORS_ALLOWED_ORIGINS = [
+        "https://richmans-kenya-journeys-1.onrender.com",
+    ]
+    
+    # Add from environment if set
     cors_origins_str = config("CORS_ALLOWED_ORIGINS", default="")
     if cors_origins_str:
-        CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
-    else:
-        CORS_ALLOWED_ORIGINS = []
+        additional_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+        CORS_ALLOWED_ORIGINS.extend(additional_origins)
     
-    # CRITICAL: Add current domain to CORS if not already there
-    if os.environ.get('RENDER_SERVICE_NAME'):
-        current_domain = f"https://{os.environ.get('RENDER_SERVICE_NAME')}.onrender.com"
-        if current_domain not in CORS_ALLOWED_ORIGINS:
-            CORS_ALLOWED_ORIGINS.append(current_domain)
+    # CSRF trusted origins
+    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
     
-    # Mobile-specific CORS settings
-    CORS_ALLOW_CREDENTIALS = True
+    # Enhanced CORS settings for API
+    CORS_ALLOW_CREDENTIALS = False  # Changed to False for simpler setup
     CORS_ALLOW_HEADERS = [
         "accept",
         "accept-encoding",
@@ -155,23 +151,19 @@ else:
     CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
     CORS_PREFLIGHT_MAX_AGE = 86400
     
-    # CSRF settings for mobile
-    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
+    # Security settings
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
     CSRF_COOKIE_SECURE = True
-    CSRF_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = True
     
-    print(f"Production CORS settings: {CORS_ALLOWED_ORIGINS}")
+    print(f"Production CORS origins: {CORS_ALLOWED_ORIGINS}")
 
-# Session configuration for mobile compatibility
-SESSION_COOKIE_SECURE = not DEBUG
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax' if not DEBUG else 'None'
-
-# Static files configuration
+# Static files configuration - ENHANCED
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Add dist to staticfiles dirs only if it exists
+# Staticfiles dirs
 STATICFILES_DIRS = []
 if (BASE_DIR / "dist").exists():
     STATICFILES_DIRS.append(BASE_DIR / "dist")
@@ -181,13 +173,12 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-# CRITICAL: Production static file handling
+# WhiteNoise configuration
 if DEBUG:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 else:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# WhiteNoise configuration - ENHANCED
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
@@ -195,7 +186,7 @@ WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
 ]
 WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
 
-# Enhanced MIME types for better mobile compatibility
+# Enhanced MIME types
 WHITENOISE_MIMETYPES = {
     '.js': 'application/javascript; charset=utf-8',
     '.mjs': 'application/javascript; charset=utf-8', 
@@ -219,7 +210,7 @@ WHITENOISE_MIMETYPES = {
     '.xml': 'application/xml; charset=utf-8',
 }
 
-# Media files - FIXED for production
+# Media files - PRODUCTION FIX
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -227,7 +218,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_ROOT.mkdir(exist_ok=True)
 (MEDIA_ROOT / "locations").mkdir(exist_ok=True)
 
-# File upload settings - optimized for mobile
+# File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 FILE_UPLOAD_PERMISSIONS = 0o644
@@ -248,22 +239,7 @@ TIME_ZONE = "Africa/Nairobi"
 USE_I18N = True
 USE_TZ = True
 
-# Security settings (production only)
-if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    X_FRAME_OPTIONS = 'DENY'
-    
-    # Mobile-specific security settings
-    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
-    SECURE_REFERRER_POLICY = "same-origin"
-
-# Enhanced logging for production debugging
+# Enhanced logging for debugging
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
