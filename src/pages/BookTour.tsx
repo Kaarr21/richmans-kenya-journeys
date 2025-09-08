@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { apiClient, BookingData } from "@/lib/api";
+import { useBookings } from "@/hooks/useBookings";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 interface FormData {
   firstName: string;
@@ -34,6 +35,7 @@ const BookTour = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { createBooking } = useBookings();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -61,18 +63,22 @@ const BookTour = () => {
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`;
       
-      const bookingData: BookingData = {
+      const bookingData: TablesInsert<'bookings'> = {
         customer_name: fullName,
         customer_email: formData.email,
-        customer_phone: formData.phone || undefined,
+        customer_phone: formData.phone || null,
         destination: formData.destination,
         group_size: parseInt(formData.groupSize) || 1,
-        preferred_date: formData.preferredDate || undefined,
-        special_requests: formData.specialRequests || undefined
+        preferred_date: formData.preferredDate || null,
+        special_requests: formData.specialRequests || null
       };
 
       // Save booking to database
-      await apiClient.createBooking(bookingData);
+      const result = await createBooking(bookingData);
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
 
       toast({
         title: "Booking Submitted!",

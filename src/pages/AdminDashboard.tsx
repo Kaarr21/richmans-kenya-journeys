@@ -1,185 +1,81 @@
-// src/pages/AdminDashboard.tsx - Enhanced with location editing
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import AuthPage from "@/components/AuthPage";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import SupabaseAuthPage from "@/components/SupabaseAuthPage";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import LocationUpload, { LocationEditDialog } from "@/components/LocationUpload";
-import BookingManager from "@/components/BookingManager";
-import Schedule from "@/components/Schedule";
-import TourManager from "@/components/TourManager";
 import { 
-  Users, 
   Calendar, 
-  DollarSign, 
   MapPin, 
   Phone, 
   Mail,
-  Star,
   TrendingUp,
   LogOut,
   Camera,
   Trash2,
-  CalendarDays,
-  Edit
+  Edit,
+  Plus,
+  Upload
 } from "lucide-react";
-import { apiClient, BookingResponse, LocationResponse, TourResponse } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useBookings } from "@/hooks/useBookings";
+import { useLocations } from "@/hooks/useLocations";
+import type { Tables } from "@/integrations/supabase/types";
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-}
-
-interface StatItem {
-  title: string;
-  value: string;
-  change: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}
-
-type TabType = 'overview' | 'bookings' | 'locations' | 'schedule' | 'tours';
+type TabType = 'overview' | 'bookings' | 'locations';
 
 const AdminDashboard = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [bookings, setBookings] = useState<BookingResponse[]>([]);
-  const [locations, setLocations] = useState<LocationResponse[]>([]);
-  const [tours, setTours] = useState<TourResponse[]>([]);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { bookings, loading: bookingsLoading, updateBooking, deleteBooking } = useBookings();
+  const { locations, loading: locationsLoading, uploadLocationImage, deleteLocation, updateLocation } = useLocations();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [scheduleKey, setScheduleKey] = useState(0);
-  const [editingLocation, setEditingLocation] = useState<LocationResponse | null>(null);
-  const { toast } = useToast();
-
-  const checkAuth = useCallback(async () => {
-    try {
-      if (apiClient.isAuthenticated()) {
-        const userData = await apiClient.getProfile();
-        setUser(userData.user);
-        await Promise.all([fetchBookings(), fetchLocations(), fetchTours()]);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      apiClient.clearToken();
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  const fetchBookings = async () => {
-    try {
-      const response = await apiClient.getBookings();
-      setBookings(response.results || []);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch bookings",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const fetchLocations = async () => {
-    try {
-      const response = await apiClient.getLocations();
-      setLocations(response.results || []);
-    } catch (error) {
-      console.error('Error fetching locations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch locations",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const fetchTours = async () => {
-    try {
-      const response = await apiClient.getTours();
-      setTours(response.results || []);
-    } catch (error) {
-      console.error('Error fetching tours:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch tours",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleBookingUpdated = async () => {
-    await fetchBookings();
-    setScheduleKey(prev => prev + 1);
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await apiClient.logout();
-      setUser(null);
-      toast({
-        title: "Signed out",
-        description: "You have been signed out successfully."
-      });
-    } catch (error) {
-      apiClient.clearToken();
-      setUser(null);
-      toast({
-        title: "Signed out",
-        description: "You have been signed out."
-      });
-    }
-  };
-
-  const deleteLocation = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this location? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      await apiClient.deleteLocation(id);
-      await fetchLocations();
-      toast({
-        title: "Success",
-        description: "Location deleted successfully"
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        title: "Error",
-        description: `Failed to delete location: ${errorMessage}`,
-        variant: "destructive"
-      });
-    }
-  };
+  const [editingBooking, setEditingBooking] = useState<Tables<'bookings'> | null>(null);
+  const [editingLocation, setEditingLocation] = useState<Tables<'locations'> | null>(null);
+  const [locationUpload, setLocationUpload] = useState({ title: '', description: '', file: null as File | null });
 
   const getStatusColor = (status: string): string => {
     switch (status) {
       case "confirmed":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 border-green-200";
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 border-red-200";
       case "completed":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 border-blue-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
-  const stats: StatItem[] = [
+  const handleUpdateBooking = async (id: string, status: string, notes?: string) => {
+    await updateBooking(id, { 
+      status: status as any, 
+      notes,
+      updated_at: new Date().toISOString()
+    });
+    setEditingBooking(null);
+  };
+
+  const handleLocationUpload = async () => {
+    if (!locationUpload.file || !locationUpload.title) return;
+    
+    await uploadLocationImage(locationUpload.file, locationUpload.title, locationUpload.description);
+    setLocationUpload({ title: '', description: '', file: null });
+  };
+
+  const handleLocationEdit = async (id: string, title: string, description?: string) => {
+    await updateLocation(id, { title, description });
+    setEditingLocation(null);
+  };
+
+  const stats = [
     {
       title: "Total Bookings",
       value: bookings.length.toString(),
@@ -188,23 +84,23 @@ const AdminDashboard = () => {
       color: "text-blue-600"
     },
     {
-      title: "Pending Bookings",
+      title: "Pending Bookings", 
       value: bookings.filter(b => b.status === 'pending').length.toString(),
       change: "New",
       icon: MapPin,
       color: "text-orange-600"
     },
     {
-      title: "Active Tours",
-      value: tours.filter(t => t.status === 'scheduled' || t.status === 'active').length.toString(),
+      title: "Confirmed Bookings",
+      value: bookings.filter(b => b.status === 'confirmed').length.toString(),
       change: "+3",
-      icon: CalendarDays,
+      icon: Calendar,
       color: "text-green-600"
     },
     {
       title: "Locations",
       value: locations.length.toString(),
-      change: "+2",
+      change: "+2", 
       icon: Camera,
       color: "text-purple-600"
     }
@@ -243,49 +139,93 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {bookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <h4 className="font-semibold text-foreground">{booking.customer_name}</h4>
-                          <p className="text-sm text-muted-foreground">{booking.destination}</p>
-                          <div className="flex items-center space-x-4 mt-1">
-                            <div className="flex items-center text-xs text-muted-foreground">
-                              <Mail className="h-3 w-3 mr-1" />
-                              {booking.customer_email}
-                            </div>
-                            {booking.customer_phone && (
+                {bookingsLoading ? (
+                  <p className="text-center text-muted-foreground py-8">Loading bookings...</p>
+                ) : bookings.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No bookings yet.</p>
+                ) : (
+                  bookings.map((booking) => (
+                    <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <h4 className="font-semibold text-foreground">{booking.customer_name}</h4>
+                            <p className="text-sm text-muted-foreground">{booking.destination}</p>
+                            <div className="flex items-center space-x-4 mt-1">
                               <div className="flex items-center text-xs text-muted-foreground">
-                                <Phone className="h-3 w-3 mr-1" />
-                                {booking.customer_phone}
+                                <Mail className="h-3 w-3 mr-1" />
+                                {booking.customer_email}
                               </div>
-                            )}
+                              {booking.customer_phone && (
+                                <div className="flex items-center text-xs text-muted-foreground">
+                                  <Phone className="h-3 w-3 mr-1" />
+                                  {booking.customer_phone}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">
-                          {booking.group_size} people
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(booking.created_at).toLocaleDateString()}
-                        </p>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">
+                            {booking.group_size} people
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(booking.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge className={getStatusColor(booking.status || 'pending')}>
+                          {booking.status || 'pending'}
+                        </Badge>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setEditingBooking(booking)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Manage
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Manage Booking</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label>Status</Label>
+                                <Select
+                                  defaultValue={booking.status || 'pending'}
+                                  onValueChange={(value) => handleUpdateBooking(booking.id, value, booking.notes || undefined)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex space-x-2">
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={() => {
+                                    if (window.confirm('Are you sure you want to delete this booking?')) {
+                                      deleteBooking(booking.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
-                      <Badge className={getStatusColor(booking.status)}>
-                        {booking.status}
-                      </Badge>
-                      <BookingManager 
-                        booking={booking} 
-                        onBookingUpdated={handleBookingUpdated}
-                      />
                     </div>
-                  </div>
-                ))}
-                {bookings.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">No bookings yet.</p>
+                  ))
                 )}
               </div>
             </CardContent>
@@ -295,7 +235,50 @@ const AdminDashboard = () => {
       case 'locations':
         return (
           <div className="space-y-6">
-            <LocationUpload onLocationAdded={fetchLocations} />
+            {/* Location Upload */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Upload className="h-5 w-5" />
+                  <span>Upload New Location</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Title</Label>
+                  <Input
+                    value={locationUpload.title}
+                    onChange={(e) => setLocationUpload({...locationUpload, title: e.target.value})}
+                    placeholder="Location title"
+                  />
+                </div>
+                <div>
+                  <Label>Description (optional)</Label>
+                  <Textarea
+                    value={locationUpload.description}
+                    onChange={(e) => setLocationUpload({...locationUpload, description: e.target.value})}
+                    placeholder="Location description"
+                  />
+                </div>
+                <div>
+                  <Label>Image</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setLocationUpload({...locationUpload, file: e.target.files?.[0] || null})}
+                  />
+                </div>
+                <Button 
+                  onClick={handleLocationUpload}
+                  disabled={!locationUpload.file || !locationUpload.title}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Upload Location
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Locations Gallery */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -305,11 +288,17 @@ const AdminDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {locations.map((location) => (
-                    <div key={location.id} className="relative group border rounded-lg overflow-hidden">
-                      <div className="aspect-video relative">
-                        {location.image_url ? (
+                {locationsLoading ? (
+                  <p className="text-center text-muted-foreground py-8">Loading locations...</p>
+                ) : locations.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    No locations added yet. Upload your first location photo!
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {locations.map((location) => (
+                      <div key={location.id} className="relative group border rounded-lg overflow-hidden">
+                        <div className="aspect-video relative">
                           <img 
                             src={location.image_url} 
                             alt={location.title}
@@ -319,66 +308,80 @@ const AdminDashboard = () => {
                               target.src = '/placeholder-image.jpg';
                             }}
                           />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                            <Camera className="h-12 w-12 text-gray-400" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
-                          <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => setEditingLocation(location)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteLocation(location.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
+                            <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="secondary" size="sm" onClick={() => setEditingLocation(location)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Location</DialogTitle>
+                                  </DialogHeader>
+                                  {editingLocation && (
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label>Title</Label>
+                                        <Input
+                                          defaultValue={editingLocation.title}
+                                          onChange={(e) => setEditingLocation({...editingLocation, title: e.target.value})}
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label>Description</Label>
+                                        <Textarea
+                                          defaultValue={editingLocation.description || ''}
+                                          onChange={(e) => setEditingLocation({...editingLocation, description: e.target.value})}
+                                        />
+                                      </div>
+                                      <Button
+                                        onClick={() => editingLocation && handleLocationEdit(editingLocation.id, editingLocation.title, editingLocation.description || undefined)}
+                                      >
+                                        Save Changes
+                                      </Button>
+                                    </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  if (window.confirm('Are you sure you want to delete this location?')) {
+                                    deleteLocation(location.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-foreground mb-1">{location.title}</h3>
+                          {location.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{location.description}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-foreground mb-1">{location.title}</h3>
-                        {location.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">{location.description}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {location.images?.length || 0} image{location.images?.length !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {locations.length === 0 && (
-                    <p className="col-span-full text-center text-muted-foreground py-8">
-                      No locations added yet. Upload your first location photo!
-                    </p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         );
-      
-      case 'schedule':
-        return <Schedule key={scheduleKey} />;
-      
-      case 'tours':
-        return <TourManager apiClient={apiClient} />;
       
       default:
         return null;
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -390,7 +393,7 @@ const AdminDashboard = () => {
   }
 
   if (!user) {
-    return <AuthPage onAuthSuccess={checkAuth} />;
+    return <SupabaseAuthPage />;
   }
 
   return (
@@ -402,10 +405,10 @@ const AdminDashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
               <p className="text-muted-foreground">
-                Welcome back, {user.first_name || user.username}! Here's your business overview.
+                Welcome back! Here's your business overview.
               </p>
             </div>
-            <Button onClick={handleSignOut} variant="outline">
+            <Button onClick={signOut} variant="outline">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
@@ -416,9 +419,7 @@ const AdminDashboard = () => {
             {[
               { key: 'overview' as const, label: 'Overview', icon: TrendingUp },
               { key: 'bookings' as const, label: 'Bookings', icon: Calendar },
-              { key: 'tours' as const, label: 'Tours', icon: CalendarDays },
               { key: 'locations' as const, label: 'Locations', icon: Camera },
-              { key: 'schedule' as const, label: 'Schedule', icon: MapPin }
             ].map((tab) => (
               <Button
                 key={tab.key}
@@ -437,16 +438,6 @@ const AdminDashboard = () => {
         </div>
       </main>
       <Footer />
-
-      {/* Location Edit Dialog */}
-      {editingLocation && (
-        <LocationEditDialog
-          location={editingLocation}
-          isOpen={!!editingLocation}
-          onClose={() => setEditingLocation(null)}
-          onUpdated={fetchLocations}
-        />
-      )}
     </div>
   );
 };
