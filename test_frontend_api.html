@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API URL Test</title>
+</head>
+<body>
+    <h1>API URL Detection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Simulate the API URL detection logic
+        function getApiBaseUrl() {
+            const hostname = window.location.hostname;
+            
+            console.log('🔍 API URL Detection:');
+            console.log('- Current hostname:', hostname);
+            console.log('- Current origin:', window.location.origin);
+            
+            // Check if we're on Render (production)
+            if (hostname.includes('onrender.com')) {
+                const productionUrl = 'https://richmans-kenya-journeys-1.onrender.com/api';
+                console.log('✅ Detected Render deployment, using:', productionUrl);
+                return productionUrl;
+            }
+            
+            // Check if we're on localhost (development)
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                const developmentUrl = 'http://localhost:8000/api';
+                console.log('✅ Detected local development, using:', developmentUrl);
+                return developmentUrl;
+            }
+            
+            // Fallback: try to construct URL from current origin
+            const fallbackUrl = `${window.location.origin}/api`;
+            console.log('🔧 Using fallback URL:', fallbackUrl);
+            return fallbackUrl;
+        }
+        
+        // Test the API URL detection
+        const apiUrl = getApiBaseUrl();
+        
+        // Display results
+        document.getElementById('results').innerHTML = `
+            <h2>Results:</h2>
+            <p><strong>Current Hostname:</strong> ${window.location.hostname}</p>
+            <p><strong>Current Origin:</strong> ${window.location.origin}</p>
+            <p><strong>Detected API URL:</strong> ${apiUrl}</p>
+            <p><strong>Expected for Render:</strong> https://richmans-kenya-journeys-1.onrender.com/api</p>
+        `;
+        
+        // Test API connection
+        fetch(apiUrl + '/locations/')
+            .then(response => {
+                document.getElementById('results').innerHTML += `
+                    <p><strong>API Test:</strong> ${response.status} ${response.statusText}</p>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('results').innerHTML += `
+                    <p><strong>API Test Error:</strong> ${error.message}</p>
+                `;
+            });
+    </script>
+</body>
+</html>

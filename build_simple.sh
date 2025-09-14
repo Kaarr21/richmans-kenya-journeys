@@ -15,8 +15,15 @@ if [ -f "package.json" ]; then
     echo "📦 Installing Node.js dependencies..."
     npm install --production=false
     
+    # Set environment variables for build
+    echo "🔧 Setting build environment variables..."
+    export VITE_API_BASE_URL="https://richmans-kenya-journeys-1.onrender.com/api"
+    export NODE_ENV="production"
+    
     # Build React app
     echo "🏗️ Building React app..."
+    echo "Environment during build:"
+    echo "VITE_API_BASE_URL: ${VITE_API_BASE_URL}"
     npm run build
     
     # Copy React build to Django static files

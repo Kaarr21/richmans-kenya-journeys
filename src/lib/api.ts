@@ -1,36 +1,31 @@
 // src/lib/api.ts - ENHANCED for reliable production deployment
 
-// CRITICAL: More robust API URL detection
+// CRITICAL: Robust API URL detection for production deployment
 const getApiBaseUrl = (): string => {
-  // First, try the build-time injected environment variable
-  const buildTimeUrl = import.meta.env.VITE_API_BASE_URL;
-  
-  // Detect if we're in production by checking the hostname
-  const isProduction = window.location.hostname.includes('onrender.com') || 
-                      import.meta.env.PROD || 
-                      import.meta.env.MODE === 'production';
+  const hostname = window.location.hostname;
   
   console.log('🔍 API URL Detection:');
-  console.log('- Build-time VITE_API_BASE_URL:', buildTimeUrl);
-  console.log('- Current hostname:', window.location.hostname);
-  console.log('- import.meta.env.PROD:', import.meta.env.PROD);
-  console.log('- import.meta.env.MODE:', import.meta.env.MODE);
-  console.log('- Detected as production:', isProduction);
+  console.log('- Current hostname:', hostname);
+  console.log('- Current origin:', window.location.origin);
   
-  if (buildTimeUrl && buildTimeUrl !== 'undefined' && buildTimeUrl.trim() !== '') {
-    console.log('✅ Using build-time API URL:', buildTimeUrl);
-    return buildTimeUrl.trim();
-  }
-  
-  if (isProduction) {
+  // Check if we're on Render (production)
+  if (hostname.includes('onrender.com')) {
     const productionUrl = 'https://richmans-kenya-journeys-1.onrender.com/api';
-    console.log('🔧 Using fallback production URL:', productionUrl);
+    console.log('✅ Detected Render deployment, using:', productionUrl);
     return productionUrl;
   }
   
-  const developmentUrl = 'http://localhost:8000/api';
-  console.log('🔧 Using development URL:', developmentUrl);
-  return developmentUrl;
+  // Check if we're on localhost (development)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    const developmentUrl = 'http://localhost:8000/api';
+    console.log('✅ Detected local development, using:', developmentUrl);
+    return developmentUrl;
+  }
+  
+  // Fallback: try to construct URL from current origin
+  const fallbackUrl = `${window.location.origin}/api`;
+  console.log('🔧 Using fallback URL:', fallbackUrl);
+  return fallbackUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
