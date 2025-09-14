@@ -115,12 +115,14 @@ else:
         re_path(r'^media/(?P<path>.*)$', serve_media, name='media'),
     ]
 
-# React app catch-all - MUST BE LAST
+# React app routes - specific frontend routes only
 urlpatterns += [
-    # Handle paths with trailing slash
-    re_path(r'^(?P<path>.*)/$', serve_react_app, name='react-app-slash'),
-    # Handle paths without trailing slash
-    re_path(r'^(?P<path>.*)$', serve_react_app, name='react-app'),
+    # Handle root path
+    re_path(r'^$', serve_react_app, name='react-app-root'),
+    # Handle specific frontend routes
+    re_path(r'^gallery/?$', serve_react_app, name='react-app-gallery'),
+    re_path(r'^book-tour/?$', serve_react_app, name='react-app-book-tour'),
+    re_path(r'^auth/?$', serve_react_app, name='react-app-auth'),
 ]
 
 logger.info(f"URL patterns loaded. Total patterns: {len(urlpatterns)}")

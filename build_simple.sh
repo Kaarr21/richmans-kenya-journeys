@@ -45,6 +45,10 @@ fi
 echo "🗄️ Running Django migrations..."
 python manage.py migrate --noinput
 
+# Create superuser if it doesn't exist
+echo "👤 Creating superuser..."
+python create_superuser.py
+
 # Collect static files
 echo "📦 Collecting Django static files..."
 python manage.py collectstatic --noinput --clear
