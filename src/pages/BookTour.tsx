@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useBookings } from "@/hooks/useBookings";
-import type { TablesInsert } from "@/integrations/supabase/types";
+import { useBookingsDjango } from "@/hooks/useBookingsDjango";
+import { BookingData } from "@/lib/api";
 
 interface FormData {
   firstName: string;
@@ -35,7 +35,7 @@ const BookTour = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { createBooking } = useBookings();
+  const { createBooking } = useBookingsDjango();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -63,14 +63,14 @@ const BookTour = () => {
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`;
       
-      const bookingData: TablesInsert<'bookings'> = {
+      const bookingData: BookingData = {
         customer_name: fullName,
         customer_email: formData.email,
-        customer_phone: formData.phone || null,
+        customer_phone: formData.phone || undefined,
         destination: formData.destination,
         group_size: parseInt(formData.groupSize) || 1,
-        preferred_date: formData.preferredDate || null,
-        special_requests: formData.specialRequests || null
+        preferred_date: formData.preferredDate || undefined,
+        special_requests: formData.specialRequests || undefined
       };
 
       // Save booking to database

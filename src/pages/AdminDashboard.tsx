@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import SupabaseAuthPage from "@/components/SupabaseAuthPage";
+import { AuthPageDjango } from "@/components/AuthPageDjango";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { 
@@ -23,20 +23,20 @@ import {
   Plus,
   Upload
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useBookings } from "@/hooks/useBookings";
-import { useLocations } from "@/hooks/useLocations";
-import type { Tables } from "@/integrations/supabase/types";
+import { useAuthDjango } from "@/hooks/useAuthDjango";
+import { useBookingsDjango } from "@/hooks/useBookingsDjango";
+import { useLocationsDjango } from "@/hooks/useLocationsDjango";
+import { BookingResponse, LocationResponse } from "@/lib/api";
 
 type TabType = 'overview' | 'bookings' | 'locations';
 
 const AdminDashboard = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
-  const { bookings, loading: bookingsLoading, updateBooking, deleteBooking } = useBookings();
-  const { locations, loading: locationsLoading, uploadLocationImage, deleteLocation, updateLocation } = useLocations();
+  const { user, loading: authLoading, signOut } = useAuthDjango();
+  const { bookings, loading: bookingsLoading, updateBooking, deleteBooking } = useBookingsDjango();
+  const { locations, loading: locationsLoading, createLocation, deleteLocation, updateLocation } = useLocationsDjango();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [editingBooking, setEditingBooking] = useState<Tables<'bookings'> | null>(null);
-  const [editingLocation, setEditingLocation] = useState<Tables<'locations'> | null>(null);
+  const [editingBooking, setEditingBooking] = useState<BookingResponse | null>(null);
+  const [editingLocation, setEditingLocation] = useState<LocationResponse | null>(null);
   const [locationUpload, setLocationUpload] = useState({ title: '', description: '', file: null as File | null });
 
   const getStatusColor = (status: string): string => {
@@ -393,7 +393,7 @@ const AdminDashboard = () => {
   }
 
   if (!user) {
-    return <SupabaseAuthPage />;
+    return <AuthPageDjango />;
   }
 
   return (

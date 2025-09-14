@@ -1,7 +1,14 @@
-import SupabaseAuthPage from "@/components/SupabaseAuthPage";
+import { AuthPageDjango } from "@/components/AuthPageDjango";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
-  return <SupabaseAuthPage />;
+  const navigate = useNavigate();
+
+  const handleAuthSuccess = () => {
+    navigate('/admin');
+  };
+
+  return <AuthPageDjango onAuthSuccess={handleAuthSuccess} />;
 };
 
 export default Auth;
