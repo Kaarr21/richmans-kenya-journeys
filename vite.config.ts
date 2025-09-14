@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
+    minify: 'esbuild', // Changed to esbuild for faster builds
     rollupOptions: {
       output: {
         manualChunks: {
@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => ({
       }
     },
     chunkSizeWarningLimit: 1000,
+    target: 'es2020',
+    reportCompressedSize: false
   },
   base: mode === 'production' ? '/static/' : '/',
   server: {
@@ -35,8 +37,13 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
+    // Inject environment variables at build time
+    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
   },
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query']
   }
 }))

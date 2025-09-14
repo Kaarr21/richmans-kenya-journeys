@@ -1,0 +1,48 @@
+# render_simple.yaml - Simplified Configuration for reliable deployment
+services:
+  - type: web
+    name: richman-tours
+    env: python
+    runtime: python-3.12.3
+    buildCommand: chmod +x build_simple.sh && ./build_simple.sh
+    startCommand: gunicorn richman_backend.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --access-logfile - --error-logfile -
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "richman_backend.settings"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: richman-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: "richmans-kenya-journeys-1.onrender.com"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://richmans-kenya-journeys-1.onrender.com"
+      - key: EMAIL_HOST
+        value: "smtp.gmail.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        value: "karokin35@gmail.com"
+      - key: EMAIL_HOST_PASSWORD
+        value: "dscq pqoy xreg xuyz"
+      - key: VITE_API_BASE_URL
+        value: "https://richmans-kenya-journeys-1.onrender.com/api"
+      - key: NODE_VERSION
+        value: "18.20.4"
+      - key: NODE_ENV
+        value: "production"
+      - key: PORT
+        value: "10000"
+      - key: RENDER
+        value: "true"
+
+databases:
+  - name: richman-db
+    databaseName: richmans_tours
+    user: postgres

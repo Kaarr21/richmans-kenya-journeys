@@ -114,12 +114,12 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
-# CORS Configuration - FIXED for production
+# CORS Configuration - Simplified for reliability
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
     print("Development: CORS allow all origins")
 else:
-    # Production CORS - CRITICAL FIX
+    # Production CORS - Simplified
     CORS_ALLOWED_ORIGINS = [
         "https://richmans-kenya-journeys-1.onrender.com",
     ]
@@ -133,33 +133,20 @@ else:
     # CSRF trusted origins
     CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
     
-    # Enhanced CORS settings for API
-    CORS_ALLOW_CREDENTIALS = False  # Changed to False for simpler setup
-    CORS_ALLOW_HEADERS = [
-        "accept",
-        "accept-encoding",
-        "authorization",
-        "content-type",
-        "dnt",
-        "origin",
-        "user-agent",
-        "x-csrftoken",
-        "x-requested-with",
-        "cache-control",
-        "pragma",
-    ]
-    CORS_ALLOWED_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
-    CORS_PREFLIGHT_MAX_AGE = 86400
+    # Simplified CORS settings
+    CORS_ALLOW_CREDENTIALS = False
+    CORS_ALLOW_ALL_HEADERS = True  # Simplified for reliability
+    CORS_ALLOW_ALL_METHODS = True  # Simplified for reliability
     
-    # Security settings
+    # Security settings - Simplified
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = True
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = False  # Disabled to prevent redirect loops
+    CSRF_COOKIE_SECURE = False   # Disabled for Render compatibility
+    SESSION_COOKIE_SECURE = False # Disabled for Render compatibility
     
     print(f"Production CORS origins: {CORS_ALLOWED_ORIGINS}")
 
-# Static files configuration - ENHANCED
+# Static files configuration - Simplified
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -168,47 +155,14 @@ STATICFILES_DIRS = []
 if (BASE_DIR / "dist").exists():
     STATICFILES_DIRS.append(BASE_DIR / "dist")
 
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-]
-
-# WhiteNoise configuration
+# Simplified WhiteNoise configuration
 if DEBUG:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 else:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"  # Simplified
 
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
-WHITENOISE_SKIP_COMPRESS_EXTENSIONS = [
-    'jpg', 'jpeg', 'png', 'gif', 'webp', 'zip', 'gz', 'tgz', 'bz2', 'tbz', 'xz', 'br'
-]
-WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
-
-# Enhanced MIME types
-WHITENOISE_MIMETYPES = {
-    '.js': 'application/javascript; charset=utf-8',
-    '.mjs': 'application/javascript; charset=utf-8', 
-    '.css': 'text/css; charset=utf-8',
-    '.woff': 'font/woff',
-    '.woff2': 'font/woff2',
-    '.ttf': 'font/ttf',
-    '.eot': 'application/vnd.ms-fontobject',
-    '.otf': 'font/otf',
-    '.svg': 'image/svg+xml; charset=utf-8',
-    '.ico': 'image/x-icon',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg', 
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
-    '.json': 'application/json; charset=utf-8',
-    '.map': 'application/json; charset=utf-8',
-    '.txt': 'text/plain; charset=utf-8',
-    '.html': 'text/html; charset=utf-8',
-    '.xml': 'application/xml; charset=utf-8',
-}
 
 # Media files - PRODUCTION FIX
 MEDIA_URL = "/media/"
