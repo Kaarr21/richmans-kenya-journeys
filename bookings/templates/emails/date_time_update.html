@@ -1,0 +1,111 @@
+<!-- date_time_update.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tour Date & Time Update - Richman Travel & Tours</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .update-notice { background: #fef3c7; border: 2px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .new-details { background: #dcfce7; border: 1px solid #16a34a; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .old-details { background: #fef2f2; border: 1px solid #dc2626; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .booking-details { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .message-box { background: #eff6ff; border: 1px solid #2563eb; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .footer { background: #6b7280; color: white; padding: 15px; text-align: center; font-size: 12px; }
+        .highlight { background: #fef3c7; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 Richman Travel & Tours</h1>
+        <h2>📅 Tour Date & Time Update</h2>
+    </div>
+    
+    <div class="content">
+        <p>Dear {{ customer_name }},</p>
+        
+        <div class="update-notice">
+            <h3>⚠️ Important: Your Tour Schedule Has Been Updated</h3>
+            <p>We need to inform you that there has been a change to your confirmed tour date and/or time. Please review the updated details below.</p>
+        </div>
+        
+        {% if previous_confirmed_date or previous_confirmed_time %}
+        <div class="old-details">
+            <h3>📋 Previous Schedule:</h3>
+            {% if previous_confirmed_date %}
+            <p><strong>Date:</strong> {{ previous_confirmed_date }}</p>
+            {% endif %}
+            {% if previous_confirmed_time %}
+            <p><strong>Time:</strong> {{ previous_confirmed_time }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="new-details">
+            <h3>✅ Updated Schedule:</h3>
+            {% if confirmed_date %}
+            <p><strong>New Date:</strong> <span class="highlight">{{ confirmed_date }}</span></p>
+            {% endif %}
+            {% if confirmed_time %}
+            <p><strong>New Time:</strong> <span class="highlight">{{ confirmed_time }}</span></p>
+            {% endif %}
+        </div>
+        
+        <div class="booking-details">
+            <h3>📋 Complete Booking Details:</h3>
+            <p><strong>Booking ID:</strong> #{{ booking_id }}</p>
+            <p><strong>Destination:</strong> {{ destination }}</p>
+            <p><strong>Group Size:</strong> {{ group_size }} person{{ group_size|pluralize }}</p>
+            {% if duration_days %}
+            <p><strong>Duration:</strong> {{ duration_days }} day{{ duration_days|pluralize }}</p>
+            {% endif %}
+            {% if amount %}
+            <p><strong>Total Amount:</strong> ${{ amount }}</p>
+            {% endif %}
+        </div>
+        
+        {% if admin_message %}
+        <div class="message-box">
+            <h3>💬 Message from Richard:</h3>
+            <p>{{ admin_message }}</p>
+        </div>
+        {% endif %}
+        
+        <div class="update-notice">
+            <h3>📞 Next Steps:</h3>
+            <ul>
+                <li><strong>Please confirm</strong> that the new date and time work for you</li>
+                <li><strong>Contact Richard immediately</strong> if you have any concerns or conflicts</li>
+                <li><strong>Update your calendar</strong> with the new schedule</li>
+                <li><strong>Prepare for your adventure</strong> - we're excited to show you Kenya!</li>
+            </ul>
+        </div>
+        
+        <p><strong>Important Reminders:</strong></p>
+        <ul>
+            <li>Richard will contact you 2-3 days before your tour with final details</li>
+            <li>Pick-up location and time will be confirmed closer to the date</li>
+            <li>Bring comfortable clothing, camera, and your sense of adventure!</li>
+            <li>If you have any dietary restrictions or special needs, please let us know</li>
+        </ul>
+        
+        <p>We apologize for any inconvenience this change may cause. We're committed to providing you with the best possible experience.</p>
+        
+        <p>If you have any questions or concerns, please don't hesitate to contact Richard:</p>
+        <p>📞 Phone/WhatsApp: {{ richard_phone }}<br>
+           📧 Email: {{ richard_email }}</p>
+        
+        <p>Thank you for your understanding and we look forward to welcoming you to Kenya!</p>
+        
+        <p>Best regards,<br>
+           <strong>Richard Karoki</strong><br>
+           Richman Travel & Tours</p>
+    </div>
+    
+    <div class="footer">
+        <p>Richman Travel & Tours | Nairobi, Kenya | {{ richard_email }} | {{ richard_phone }}</p>
+        <p>This email was sent because your tour schedule was updated. Please keep this information for your records.</p>
+    </div>
+</body>
+</html>

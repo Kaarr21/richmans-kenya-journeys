@@ -33,9 +33,34 @@ class Booking(models.Model):
     customer_notified = models.BooleanField(default=False, help_text="Whether customer has been notified of status")
     last_notification_sent = models.DateTimeField(blank=True, null=True)
     
+    # Date/time change tracking
+    previous_confirmed_date = models.DateField(blank=True, null=True, help_text="Previous confirmed date for change detection")
+    previous_confirmed_time = models.TimeField(blank=True, null=True, help_text="Previous confirmed time for change detection")
+    date_time_notification_sent = models.BooleanField(default=False, help_text="Whether customer has been notified of date/time changes")
+    
     class Meta:
         ordering = ['-created_at']
     
     def __str__(self):
         return f"{self.customer_name} - {self.destination} ({self.status})"
+    
+    def has_date_time_changed(self):
+        """Check if confirmed date or time has changed"""
+        return (
+            self.confirmed_date != self.previous_confirmed_date or
+            self.confirmed_time != self.previous_confirmed_time
+        )
+    
+    def save(self, *args, **kwargs):
+        """Override save to track date/time changes"""
+        # Store previous values before saving
+        if self.pk:
+            try:
+                old_instance = Booking.objects.get(pk=self.pk)
+                self.previous_confirmed_date = old_instance.confirmed_date
+                self.previous_confirmed_time = old_instance.confirmed_time
+            except Booking.DoesNotExist:
+                pass
+        
+        super().save(*args, **kwargs)
         

@@ -126,4 +126,49 @@ Please log into the admin dashboard to manage this booking.
         except Exception as e:
             logger.error(f"Failed to send admin notification: {e}")
             return False
+
+    @staticmethod
+    def send_date_time_update_notification(booking):
+        """Send notification to customer when confirmed date/time is updated"""
+        subject = f"Tour Schedule Update - {booking.destination}"
+        
+        context = {
+            'customer_name': booking.customer_name,
+            'destination': booking.destination,
+            'booking_id': str(booking.id)[:8],
+            'group_size': booking.group_size,
+            'duration_days': booking.duration_days,
+            'amount': booking.amount,
+            'admin_message': booking.admin_message,
+            'confirmed_date': booking.confirmed_date,
+            'confirmed_time': booking.confirmed_time,
+            'previous_confirmed_date': booking.previous_confirmed_date,
+            'previous_confirmed_time': booking.previous_confirmed_time,
+            'richard_phone': '0720912561',
+            'richard_email': 'richkaroki@gmail.com'
+        }
+        
+        html_message = render_to_string('emails/date_time_update.html', context)
+        plain_message = strip_tags(html_message)
+        
+        try:
+            send_mail(
+                subject=subject,
+                message=plain_message,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[booking.customer_email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            
+            # Update tracking fields
+            booking.date_time_notification_sent = True
+            booking.last_notification_sent = datetime.now()
+            booking.save(update_fields=['date_time_notification_sent', 'last_notification_sent'])
+            
+            logger.info(f"Date/time update notification sent to {booking.customer_email} for booking {booking.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send date/time update notification: {e}")
+            return False
             

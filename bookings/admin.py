@@ -33,7 +33,10 @@ class BookingAdmin(admin.ModelAdmin):
         'created_at', 
         'updated_at',
         'customer_notified',
-        'last_notification_sent'
+        'last_notification_sent',
+        'date_time_notification_sent',
+        'previous_confirmed_date',
+        'previous_confirmed_time'
     ]
     date_hierarchy = 'created_at'
     ordering = ['-created_at']
@@ -93,7 +96,7 @@ class BookingAdmin(admin.ModelAdmin):
     status_colored.short_description = 'Status'
     status_colored.admin_order_field = 'status'
     
-    actions = ['mark_confirmed', 'mark_cancelled', 'mark_completed']
+    actions = ['mark_confirmed', 'mark_cancelled', 'mark_completed', 'send_date_time_notifications']
     
     def mark_confirmed(self, request, queryset):
         updated = queryset.update(status='confirmed')
@@ -109,4 +112,23 @@ class BookingAdmin(admin.ModelAdmin):
         updated = queryset.update(status='completed')
         self.message_user(request, f'{updated} bookings marked as completed.')
     mark_completed.short_description = "Mark selected bookings as completed"
+    
+    def send_date_time_notifications(self, request, queryset):
+        from .email_service import EmailService
+        sent_count = 0
+        failed_count = 0
+        
+        for booking in queryset:
+            if booking.confirmed_date or booking.confirmed_time:
+                success = EmailService.send_date_time_update_notification(booking)
+                if success:
+                    sent_count += 1
+                else:
+                    failed_count += 1
+        
+        if sent_count > 0:
+            self.message_user(request, f'Date/time update notifications sent to {sent_count} customers.')
+        if failed_count > 0:
+            self.message_user(request, f'Failed to send {failed_count} notifications.', level='ERROR')
+    send_date_time_notifications.short_description = "Send date/time update notifications to selected customers"
     

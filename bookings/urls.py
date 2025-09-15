@@ -6,5 +6,6 @@ urlpatterns = [
     path('', views.BookingListCreateView.as_view(), name='booking-list-create'),
     path('<uuid:pk>/', views.BookingDetailView.as_view(), name='booking-detail'),
     path('<uuid:pk>/send-notification/', views.send_booking_notification, name='send-booking-notification'),
+    path('<uuid:pk>/send-date-time-notification/', views.send_date_time_notification, name='send-date-time-notification'),
     path('statistics/', views.booking_statistics, name='booking-statistics'),
 ]
