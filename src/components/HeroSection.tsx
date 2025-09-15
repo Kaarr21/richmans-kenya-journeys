@@ -2,38 +2,53 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 
-// Utility function to get the correct image path for development vs production
-const getImagePath = (imageName: string) => {
-  // In development, use the public directory
-  // In production, use the static directory
-  if (import.meta.env.DEV) {
-    return `/${imageName}`;
+// High-quality Kenya safari background images with fallback system
+const getBackgroundImages = () => {
+  const isProduction = window.location.hostname.includes('onrender.com') || 
+                      window.location.hostname.includes('herokuapp.com') ||
+                      !window.location.hostname.includes('localhost');
+  
+  console.log('🖼️ Environment detection:', {
+    hostname: window.location.hostname,
+    isProduction
+  });
+  
+  if (isProduction) {
+    return [
+      "/static/kenya-safari-hero.jpg",
+      "/static/kenya-wildlife-hero.jpg", 
+      "/static/kenya-landscape-hero.jpg",
+      "/static/Masai_Mara_at_Sunset.jpg"
+    ];
   } else {
-    return `/static/${imageName}`;
+    return [
+      "/kenya-safari-hero.jpg",
+      "/kenya-wildlife-hero.jpg",
+      "/kenya-landscape-hero.jpg", 
+      "/Masai_Mara_at_Sunset.jpg"
+    ];
   }
 };
 
-// High-quality Kenya safari background images
-const backgroundImages = [
-  getImagePath("kenya-safari-hero.jpg"),      // Maasai Mara sunset
-  getImagePath("kenya-wildlife-hero.jpg"),    // African wildlife
-  getImagePath("kenya-landscape-hero.jpg"),   // Kenya landscape
-  getImagePath("Masai_Mara_at_Sunset.jpg"),   // Original fallback
-];
+const backgroundImages = getBackgroundImages();
+console.log('🖼️ Background images paths:', backgroundImages);
 
 const HeroSection = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
+    console.log('🖼️ Starting image preload...');
+    
     // Preload all images
-    const preloadImages = backgroundImages.map(src => {
+    const preloadImages = backgroundImages.map((src, index) => {
       const img = new Image();
       img.onload = () => {
+        console.log(`✅ Image ${index + 1} loaded successfully:`, src);
         setImageLoaded(true);
       };
-      img.onerror = () => {
-        console.warn(`Failed to load image: ${src}`);
+      img.onerror = (error) => {
+        console.error(`❌ Failed to load image ${index + 1}:`, src, error);
         setImageLoaded(true); // Still set loaded to show fallback
       };
       img.src = src;
@@ -57,6 +72,8 @@ const HeroSection = () => {
           backgroundImage: `url(${backgroundImages[currentImageIndex]})`,
           opacity: imageLoaded ? 1 : 0.9,
         }}
+        onLoad={() => console.log('🖼️ Background div loaded')}
+        onError={() => console.log('❌ Background div error')}
       >
         {/* Fallback background color in case image fails to load */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-orange-800 to-red-900" />
@@ -82,7 +99,7 @@ const HeroSection = () => {
         <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed">
           Reliable Taxi Service with Richard
 Your trusted driver for safe, comfortable rides around Nairobi and beyond. 
-Airport transfers, city tours, and personalized trips across Kenya.
+Airport, office and corporate transfers, city tours, and personalized trips across Kenya.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
