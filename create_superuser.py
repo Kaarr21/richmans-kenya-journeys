@@ -18,7 +18,7 @@ from django.contrib.auth.models import User
 def create_superuser():
     username = 'admin'
     email = 'karokin35@gmail.com'
-    password = 'admin123'
+    password = 'Karokin35!'
     
     # Check if user already exists
     if User.objects.filter(username=username).exists():
