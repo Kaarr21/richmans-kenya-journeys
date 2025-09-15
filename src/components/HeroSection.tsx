@@ -123,15 +123,15 @@ Airport, office and corporate transfers, city tours, and personalized trips acro
         {/* Stats */}
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-2">500+</div>
+            <div className="text-3xl font-bold text-primary mb-2">1000+</div>
             <div className="text-white/80">Satisfied Passengers</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-2">15+</div>
+            <div className="text-3xl font-bold text-primary mb-2">20+</div>
             <div className="text-white/80">Years of Safe Driving</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-2">50+</div>
+            <div className="text-3xl font-bold text-primary mb-2">100+</div>
             <div className="text-white/80">Destinations</div>
           </div>
         </div>
