@@ -4,6 +4,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from datetime import datetime
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ class EmailService:
             
             # Update tracking fields
             booking.customer_notified = True
-            booking.last_notification_sent = datetime.now()
+            booking.last_notification_sent = timezone.now()
             booking.save(update_fields=['customer_notified', 'last_notification_sent'])
             
             logger.info(f"Status update sent to {booking.customer_email} for booking {booking.id}")
@@ -163,7 +164,7 @@ Please log into the admin dashboard to manage this booking.
             
             # Update tracking fields
             booking.date_time_notification_sent = True
-            booking.last_notification_sent = datetime.now()
+            booking.last_notification_sent = timezone.now()
             booking.save(update_fields=['date_time_notification_sent', 'last_notification_sent'])
             
             logger.info(f"Date/time update notification sent to {booking.customer_email} for booking {booking.id}")
