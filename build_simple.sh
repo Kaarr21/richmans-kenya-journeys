@@ -47,7 +47,17 @@ python manage.py migrate --noinput
 
 # Create superuser if it doesn't exist
 echo "👤 Creating superuser..."
-python manage.py create_admin
+echo "Testing database connection first..."
+python manage.py check --database default
+echo "Running migrations to ensure database is ready..."
+python manage.py migrate --noinput
+echo "Creating admin user..."
+python manage.py create_admin || {
+    echo "❌ Admin creation failed, trying alternative method..."
+    echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'karokin35@gmail.com', 'admin123') if not User.objects.filter(username='admin').exists() else print('Admin already exists')" | python manage.py shell
+}
+echo "Verifying admin user was created..."
+python manage.py shell -c "from django.contrib.auth.models import User; admin = User.objects.filter(username='admin').first(); print(f'Admin exists: {admin is not None}'); print(f'Is superuser: {admin.is_superuser if admin else False}')"
 
 # Collect static files
 echo "📦 Collecting Django static files..."

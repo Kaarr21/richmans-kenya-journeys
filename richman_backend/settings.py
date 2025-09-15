@@ -14,6 +14,9 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 allowed_hosts_str = config("ALLOWED_HOSTS", default="localhost")
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(",") if host.strip()]
 
+# Add testserver for testing
+ALLOWED_HOSTS.append('testserver')
+
 # Add render domains
 if os.environ.get('RENDER'):
     ALLOWED_HOSTS.extend([
@@ -85,6 +88,8 @@ if "DATABASE_URL" in os.environ:
         )
     }
     print("Using production database from DATABASE_URL")
+    print(f"Database URL present: {bool(os.environ.get('DATABASE_URL'))}")
+    print(f"Render environment: {bool(os.environ.get('RENDER'))}")
 else:
     # Local PostgreSQL database configuration
     DATABASES = {
@@ -194,6 +199,11 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Nairobi"
 USE_I18N = True
 USE_TZ = True
+
+# Authentication settings
+LOGIN_REDIRECT_URL = '/admin/'
+LOGIN_URL = '/admin/login/'
+LOGOUT_REDIRECT_URL = '/admin/login/'
 
 # Enhanced logging for debugging
 LOGGING = {
