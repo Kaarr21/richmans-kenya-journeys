@@ -119,7 +119,7 @@ Please log into the admin dashboard to manage this booking.
                 subject=subject,
                 message=message,
                 from_email=settings.EMAIL_HOST_USER,
-                recipient_list=['karokin35@gmail.com'], 
+                #recipient_list=['karokin35@gmail.com'], 
                 recipient_list=['richkaroki@gmail.com'], # Richard's email
                 fail_silently=False,
             )
