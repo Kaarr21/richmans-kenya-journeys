@@ -2,12 +2,23 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 
+// Utility function to get the correct image path for development vs production
+const getImagePath = (imageName: string) => {
+  // In development, use the public directory
+  // In production, use the static directory
+  if (import.meta.env.DEV) {
+    return `/${imageName}`;
+  } else {
+    return `/static/${imageName}`;
+  }
+};
+
 // High-quality Kenya safari background images
 const backgroundImages = [
-  "/kenya-safari-hero.jpg",      // Maasai Mara sunset
-  "/kenya-wildlife-hero.jpg",    // African wildlife
-  "/kenya-landscape-hero.jpg",   // Kenya landscape
-  "/Masai_Mara_at_Sunset.jpg",   // Original fallback
+  getImagePath("kenya-safari-hero.jpg"),      // Maasai Mara sunset
+  getImagePath("kenya-wildlife-hero.jpg"),    // African wildlife
+  getImagePath("kenya-landscape-hero.jpg"),   // Kenya landscape
+  getImagePath("Masai_Mara_at_Sunset.jpg"),   // Original fallback
 ];
 
 const HeroSection = () => {
@@ -18,12 +29,16 @@ const HeroSection = () => {
     // Preload all images
     const preloadImages = backgroundImages.map(src => {
       const img = new Image();
+      img.onload = () => {
+        setImageLoaded(true);
+      };
+      img.onerror = () => {
+        console.warn(`Failed to load image: ${src}`);
+        setImageLoaded(true); // Still set loaded to show fallback
+      };
       img.src = src;
       return img;
     });
-
-    // Set the first image as loaded
-    setImageLoaded(true);
 
     // Rotate images every 8 seconds
     const interval = setInterval(() => {

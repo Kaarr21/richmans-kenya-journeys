@@ -33,6 +33,25 @@ if [ -f "package.json" ]; then
     mkdir -p staticfiles
     cp -r dist/* staticfiles/
     
+    # Copy background images from public to staticfiles
+    echo "🖼️ Copying background images..."
+    if [ -f "public/kenya-safari-hero.jpg" ]; then
+        cp public/kenya-safari-hero.jpg staticfiles/
+        echo "  ✅ Copied kenya-safari-hero.jpg"
+    fi
+    if [ -f "public/kenya-wildlife-hero.jpg" ]; then
+        cp public/kenya-wildlife-hero.jpg staticfiles/
+        echo "  ✅ Copied kenya-wildlife-hero.jpg"
+    fi
+    if [ -f "public/kenya-landscape-hero.jpg" ]; then
+        cp public/kenya-landscape-hero.jpg staticfiles/
+        echo "  ✅ Copied kenya-landscape-hero.jpg"
+    fi
+    if [ -f "public/Masai_Mara_at_Sunset.jpg" ]; then
+        cp public/Masai_Mara_at_Sunset.jpg staticfiles/
+        echo "  ✅ Copied Masai_Mara_at_Sunset.jpg"
+    fi
+    
     # Fix asset paths in index.html
     if [ -f "staticfiles/index.html" ]; then
         sed -i 's|="/assets/|="/static/assets/|g' staticfiles/index.html
