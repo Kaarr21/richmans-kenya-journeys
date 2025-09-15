@@ -1,16 +1,51 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
-const heroImage = "/Masai_Mara_at_Sunset.jpg";
+import { useState, useEffect } from "react";
+
+// High-quality Kenya safari background images
+const backgroundImages = [
+  "/kenya-safari-hero.jpg",      // Maasai Mara sunset
+  "/kenya-wildlife-hero.jpg",    // African wildlife
+  "/kenya-landscape-hero.jpg",   // Kenya landscape
+  "/Masai_Mara_at_Sunset.jpg",   // Original fallback
+];
+
 const HeroSection = () => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    // Preload all images
+    const preloadImages = backgroundImages.map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
+
+    // Set the first image as loaded
+    setImageLoaded(true);
+
+    // Rotate images every 8 seconds
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % backgroundImages.length);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image - Rotating high-quality Kenya safari images */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-in-out"
         style={{
-          backgroundImage: `url(${heroImage})`,
+          backgroundImage: `url(${backgroundImages[currentImageIndex]})`,
+          opacity: imageLoaded ? 1 : 0.9,
         }}
       >
+        {/* Fallback background color in case image fails to load */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-orange-800 to-red-900" />
+        {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
       </div>
 
@@ -68,6 +103,22 @@ Airport transfers, city tours, and personalized trips across Kenya.
             <div className="text-white/80">Destinations</div>
           </div>
         </div>
+      </div>
+
+      {/* Image Indicators */}
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        {backgroundImages.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentImageIndex(index)}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentImageIndex 
+                ? 'bg-primary scale-125' 
+                : 'bg-white/50 hover:bg-white/70'
+            }`}
+            aria-label={`View image ${index + 1}`}
+          />
+        ))}
       </div>
 
       {/* Scroll Indicator */}
