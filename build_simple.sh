@@ -13,6 +13,8 @@ pip install -r requirements.txt
 # Install Node.js dependencies if package.json exists
 if [ -f "package.json" ]; then
     echo "📦 Installing Node.js dependencies..."
+    # Clear npm cache to avoid issues with removed dependencies
+    npm cache clean --force
     npm install --production=false
     
     # Set environment variables for build
