@@ -74,8 +74,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "richman_backend.wsgi.application"
 
-# Database
+# Database Configuration
 if "DATABASE_URL" in os.environ:
+    # Production database from environment variable
     DATABASES = {
         "default": dj_database_url.parse(
             os.environ.get("DATABASE_URL"),
@@ -83,19 +84,20 @@ if "DATABASE_URL" in os.environ:
             conn_health_checks=True,
         )
     }
-    print("Using production database")
+    print("Using production database from DATABASE_URL")
 else:
+    # Local PostgreSQL database configuration
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": config("DATABASE_NAME"),
-            "USER": config("DATABASE_USER"),
-            "PASSWORD": config("DATABASE_PASSWORD"),
-            "HOST": config("DATABASE_HOST"),
-            "PORT": config("DATABASE_PORT", default="5433"),
+            "NAME": config("DATABASE_NAME", default="richmanstoursdb"),
+            "USER": config("DATABASE_USER", default="karoki"),
+            "PASSWORD": config("DATABASE_PASSWORD", default="Karokin35!"),
+            "HOST": config("DATABASE_HOST", default="localhost"),
+            "PORT": config("DATABASE_PORT", default="5432"),
         }
     }
-    print("Using local database")
+    print("Using local PostgreSQL database")
 
 # REST Framework
 REST_FRAMEWORK = {

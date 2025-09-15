@@ -47,7 +47,7 @@ python manage.py migrate --noinput
 
 # Create superuser if it doesn't exist
 echo "👤 Creating superuser..."
-python create_superuser.py
+python manage.py create_admin
 
 # Collect static files
 echo "📦 Collecting Django static files..."
