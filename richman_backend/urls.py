@@ -10,6 +10,8 @@ from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 import os
 import logging
+from PIL import Image, ImageDraw
+import io
 
 # Import sitemaps
 try:
@@ -26,6 +28,43 @@ logger = logging.getLogger(__name__)
 def health_check(request):
     """Simple health check endpoint"""
     return HttpResponse("OK", content_type="text/plain")
+
+def placeholder_image(request, width, height):
+    """Generate a placeholder image with specified dimensions"""
+    try:
+        width = int(width)
+        height = int(height)
+        
+        # Create a simple placeholder image
+        img = Image.new('RGB', (width, height), color='#f3f4f6')
+        draw = ImageDraw.Draw(img)
+        
+        # Add some text
+        text = f"{width} × {height}"
+        # Simple text positioning (this is basic, could be improved)
+        text_bbox = draw.textbbox((0, 0), text)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        
+        x = (width - text_width) // 2
+        y = (height - text_height) // 2
+        
+        draw.text((x, y), text, fill='#6b7280')
+        
+        # Convert to bytes
+        img_io = io.BytesIO()
+        img.save(img_io, format='JPEG', quality=80)
+        img_io.seek(0)
+        
+        response = HttpResponse(img_io.getvalue(), content_type='image/jpeg')
+        response['Cache-Control'] = 'public, max-age=3600'  # Cache for 1 hour
+        return response
+        
+    except (ValueError, TypeError):
+        raise Http404("Invalid dimensions")
+    except Exception as e:
+        logger.error(f"Error generating placeholder image: {e}")
+        raise Http404("Error generating image")
 
 def serve_react_app(request, path=''):
     """
@@ -86,6 +125,9 @@ def serve_media(request, path):
 urlpatterns = [
     # Health check for monitoring
     path('health/', health_check, name='health-check'),
+    
+    # Placeholder image endpoint
+    path('api/placeholder/<int:width>/<int:height>/', placeholder_image, name='placeholder-image'),
     
     # SEO - Sitemap
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),

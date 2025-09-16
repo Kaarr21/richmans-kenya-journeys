@@ -100,7 +100,7 @@ comfortable transportation with a personal touch.
                         className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          target.src = '/api/placeholder/400/300';
+                          target.src = '/api/placeholder/400/300/';
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -167,7 +167,7 @@ comfortable transportation with a personal touch.
                           className="max-w-full max-h-[60vh] object-contain"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = '/api/placeholder/800/600';
+                            target.src = '/api/placeholder/800/600/';
                           }}
                         />
                         
