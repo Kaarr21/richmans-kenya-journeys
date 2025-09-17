@@ -28,10 +28,10 @@ const ToursSection = () => {
   const displayLocations = locations;
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             Explore{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-safari-sunset">

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+// import { useToast } from "@/hooks/use-toast";
 import { useBookingsDjango } from "@/hooks/useBookingsDjango";
 import { BookingData } from "@/lib/api";
 
@@ -34,7 +34,7 @@ const BookTour = () => {
     specialRequests: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+  // const { toast } = useToast();
   const { createBooking } = useBookingsDjango();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -50,11 +50,7 @@ const BookTour = () => {
     e.preventDefault();
     
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.destination || !formData.groupSize) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
+      // Please fill in all required fields
       return;
     }
 
@@ -80,10 +76,7 @@ const BookTour = () => {
         throw new Error(result.error.message);
       }
 
-      toast({
-        title: "Booking Submitted!",
-        description: "Your booking request has been submitted successfully. Richard will contact you within 24 hours."
-      });
+      // Booking submitted successfully
 
       // Reset form
       setFormData({
@@ -100,11 +93,7 @@ const BookTour = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Booking error:', error);
-      toast({
-        title: "Error",
-        description: `Failed to submit booking request: ${errorMessage}`,
-        variant: "destructive"
-      });
+      // Failed to submit booking request
     } finally {
       setIsSubmitting(false);
     }

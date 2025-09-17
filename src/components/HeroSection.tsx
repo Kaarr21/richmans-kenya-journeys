@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 
-// High-quality Kenya safari background images with fallback system
+// High-quality Nairobi CBD background images with fallback system
 const getBackgroundImages = () => {
   const isProduction = window.location.hostname.includes('onrender.com') || 
                       window.location.hostname.includes('herokuapp.com') ||
@@ -15,17 +15,17 @@ const getBackgroundImages = () => {
   
   if (isProduction) {
     return [
-      "/static/kenya-safari-hero.jpg",
-      "/static/kenya-wildlife-hero.jpg", 
-      "/static/kenya-landscape-hero.jpg",
-      "/static/Masai_Mara_at_Sunset.jpg"
+      "/static/nairobi-cbd-skyline.jpg",
+      "/static/nairobi-city-center.jpg", 
+      "/static/nairobi-business-district.jpg",
+      "/static/nairobi-downtown.jpg"
     ];
   } else {
     return [
-      "/kenya-safari-hero.jpg",
-      "/kenya-wildlife-hero.jpg",
-      "/kenya-landscape-hero.jpg", 
-      "/Masai_Mara_at_Sunset.jpg"
+      "/nairobi-cbd-skyline.jpg",
+      "/nairobi-city-center.jpg",
+      "/nairobi-business-district.jpg", 
+      "/nairobi-downtown.jpg"
     ];
   }
 };
@@ -76,7 +76,7 @@ const HeroSection = () => {
         onError={() => console.log('❌ Background div error')}
       >
         {/* Fallback background color in case image fails to load */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-orange-800 to-red-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-gray-700 to-slate-900" />
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
       </div>
