@@ -76,7 +76,7 @@ const HeroSection = () => {
         onError={() => console.log('❌ Background div error')}
       >
         {/* Fallback background color in case image fails to load */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-gray-700 to-slate-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-orange-500 to-yellow-500" />
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
       </div>
