@@ -50,7 +50,6 @@ const BookTour = () => {
     e.preventDefault();
     
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.destination || !formData.groupSize) {
-      // Please fill in all required fields
       return;
     }
 
@@ -76,8 +75,6 @@ const BookTour = () => {
         throw new Error(result.error.message);
       }
 
-      // Booking submitted successfully
-
       // Reset form
       setFormData({
         firstName: "",
@@ -93,7 +90,6 @@ const BookTour = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Booking error:', error);
-      // Failed to submit booking request
     } finally {
       setIsSubmitting(false);
     }
