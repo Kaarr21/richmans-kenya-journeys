@@ -13,21 +13,13 @@ const getBackgroundImages = () => {
     isProduction
   });
   
-  if (isProduction) {
-    return [
-      "/static/nairobi-cbd-skyline.jpg",
-      "/static/nairobi-city-center.jpg", 
-      "/static/nairobi-business-district.jpg",
-      "/static/nairobi-downtown.jpg"
-    ];
-  } else {
-    return [
-      "/nairobi-cbd-skyline.jpg",
-      "/nairobi-city-center.jpg",
-      "/nairobi-business-district.jpg", 
-      "/nairobi-downtown.jpg"
-    ];
-  }
+  const files = [
+    'nairobi-cbd-skyline.jpg',
+    'nairobi-city-center.jpg',
+    'nairobi-business-district.jpg',
+    'nairobi-downtown.jpg'
+  ];
+  return files.map(name => isProduction ? `/static/${name}` : `/${name}`);
 };
 
 const backgroundImages = getBackgroundImages();
@@ -64,7 +56,7 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[80vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden">
       {/* Background Image - Rotating high-quality Kenya safari images */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-in-out"

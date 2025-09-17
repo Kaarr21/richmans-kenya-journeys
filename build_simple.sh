@@ -51,6 +51,23 @@ if [ -f "package.json" ]; then
         cp public/Masai_Mara_at_Sunset.jpg staticfiles/
         echo "  ✅ Copied Masai_Mara_at_Sunset.jpg"
     fi
+    # Nairobi CBD image set
+    if [ -f "public/nairobi-cbd-skyline.jpg" ]; then
+        cp public/nairobi-cbd-skyline.jpg staticfiles/
+        echo "  ✅ Copied nairobi-cbd-skyline.jpg"
+    fi
+    if [ -f "public/nairobi-city-center.jpg" ]; then
+        cp public/nairobi-city-center.jpg staticfiles/
+        echo "  ✅ Copied nairobi-city-center.jpg"
+    fi
+    if [ -f "public/nairobi-business-district.jpg" ]; then
+        cp public/nairobi-business-district.jpg staticfiles/
+        echo "  ✅ Copied nairobi-business-district.jpg"
+    fi
+    if [ -f "public/nairobi-downtown.jpg" ]; then
+        cp public/nairobi-downtown.jpg staticfiles/
+        echo "  ✅ Copied nairobi-downtown.jpg"
+    fi
     
     # Fix asset paths in index.html
     if [ -f "staticfiles/index.html" ]; then

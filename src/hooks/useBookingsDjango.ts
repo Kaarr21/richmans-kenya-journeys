@@ -27,24 +27,28 @@ export function useBookingsDjango() {
     fetchBookings();
   }, []);
 
-  const createBooking = async (bookingData: BookingData) => {
+  const createBooking = async (bookingData: BookingData, options?: { silent?: boolean }) => {
     try {
       const response = await apiClient.createBooking(bookingData);
       
-      toast({
-        title: "Success",
-        description: "Booking created successfully!"
-      });
+      if (!options?.silent) {
+        toast({
+          title: "Success",
+          description: "Booking created successfully!"
+        });
+      }
 
       // Refresh bookings list
       await fetchBookings();
       return { data: response, error: null };
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to create booking: " + error.message,
-        variant: "destructive"
-      });
+      if (!options?.silent) {
+        toast({
+          title: "Error",
+          description: "Failed to create booking: " + error.message,
+          variant: "destructive"
+        });
+      }
       return { data: null, error };
     }
   };

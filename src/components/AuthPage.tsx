@@ -23,21 +23,13 @@ const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
     try {
       const response = await apiClient.login(email, password);
 
-      toast({
-        title: "Success",
-        description: "Logged in successfully!",
-      });
+      // Silent success: no popup toast
 
       if (onAuthSuccess) {
         onAuthSuccess();
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Silent failure: do not show popup toast
     } finally {
       setLoading(false);
     }

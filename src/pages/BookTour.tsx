@@ -70,13 +70,13 @@ const BookTour = () => {
       };
 
       // Save booking to database
-      const result = await createBooking(bookingData);
+      const result = await createBooking(bookingData, { silent: true });
 
       if (result.error) {
         throw new Error(result.error.message);
       }
 
-      // Booking submitted successfully
+      // Booking submitted successfully (silent mode: no popup)
 
       // Reset form
       setFormData({
