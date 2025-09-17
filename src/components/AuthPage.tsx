@@ -23,21 +23,13 @@ const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
     try {
       const response = await apiClient.login(email, password);
 
-      toast({
-        title: "Success",
-        description: "Logged in successfully!",
-      });
 
       if (onAuthSuccess) {
         onAuthSuccess();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      console.error('Login error:', errorMessage);
     } finally {
       setLoading(false);
     }
