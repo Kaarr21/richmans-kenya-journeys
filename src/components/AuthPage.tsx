@@ -23,13 +23,14 @@ const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
     try {
       const response = await apiClient.login(email, password);
 
-
       if (onAuthSuccess) {
         onAuthSuccess();
       }
     } catch (error) {
+
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       console.error('Login error:', errorMessage);
+
     } finally {
       setLoading(false);
     }

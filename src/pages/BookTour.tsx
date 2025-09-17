@@ -76,17 +76,19 @@ const BookTour = () => {
       };
 
       // Save booking to database
-      const result = await createBooking(bookingData);
+      const result = await createBooking(bookingData, { silent: true });
 
       if (result.error) {
         throw new Error(result.error.message);
       }
 
 
+
       toast({
         title: "Booking Submitted Successfully!",
         description: "Richard will contact you within 12 hours to confirm your pickup details."
       });
+
 
       // Reset form
       setFormData({

@@ -109,7 +109,7 @@ def serve_react_app(request, path=''):
 
 # Enhanced media file serving for production
 def serve_media(request, path):
-    """Serve media files with proper headers"""
+    """Serve media files with proper headers and graceful fallbacks"""
     try:
         response = serve(request, path, document_root=settings.MEDIA_ROOT)
         # Add cache headers for images
@@ -119,7 +119,19 @@ def serve_media(request, path):
         return response
     except Http404:
         logger.error(f"Media file not found: {path}")
-        raise
+        # Fallback: if the requested image doesn't exist, return a placeholder
+        try:
+            width, height = 400, 300
+            # If path hints at size like 800x600, try to parse
+            for token in path.replace('-', '_').split('_'):
+                if 'x' in token and token.replace('x', '').isdigit():
+                    w, h = token.split('x')
+                    width = int(w)
+                    height = int(h)
+                    break
+        except Exception:
+            width, height = 400, 300
+        return placeholder_image(request, width, height)
 
 # URL patterns - ENHANCED with health check and sitemap
 urlpatterns = [
