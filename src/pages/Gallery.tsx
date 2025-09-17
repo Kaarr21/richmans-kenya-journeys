@@ -101,6 +101,7 @@ comfortable transportation with a personal touch.
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = '/api/placeholder/400/300/';
+                          console.error('Image failed to load:', location.image_url || location.primary_image_url);
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -168,6 +169,7 @@ comfortable transportation with a personal touch.
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/api/placeholder/800/600/';
+                            console.error('Modal image failed to load:', getCurrentImage()?.image_url);
                           }}
                         />
                         

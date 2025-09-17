@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api';
-// import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
   id: number;
@@ -18,7 +18,7 @@ interface AuthResponse {
 export function useAuthDjango() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  // const { toast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -45,10 +45,17 @@ export function useAuthDjango() {
     try {
       const response = await apiClient.login(email, password);
       setUser(response.user);
-      // Logged in successfully
+      toast({
+        title: "Login Successful",
+        description: "Welcome back! Redirecting to dashboard..."
+      });
       return { error: null };
     } catch (error: any) {
-      // Login failed
+      toast({
+        title: "Login Failed",
+        description: "Invalid credentials. Please check your email and password.",
+        variant: "destructive"
+      });
       return { error };
     }
   };
@@ -57,10 +64,18 @@ export function useAuthDjango() {
     try {
       // Note: You'll need to implement user registration in Django
       // For now, this is a placeholder
-      // Please contact admin to create an account
+      toast({
+        title: "Registration Not Available",
+        description: "Please contact admin to create an account.",
+        variant: "destructive"
+      });
       return { error: new Error("Registration not implemented") };
     } catch (error: any) {
-      // Registration failed
+      toast({
+        title: "Registration Failed",
+        description: "Unable to create account. Please contact admin.",
+        variant: "destructive"
+      });
       return { error };
     }
   };
@@ -70,12 +85,18 @@ export function useAuthDjango() {
       await apiClient.logout();
       setUser(null);
       localStorage.removeItem('token');
-      // Logged out successfully
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out."
+      });
     } catch (error: any) {
       // Even if logout fails on server, clear local state
       setUser(null);
       localStorage.removeItem('token');
-      // You have been logged out
+      toast({
+        title: "Logged Out",
+        description: "You have been logged out."
+      });
     }
   };
 

@@ -68,7 +68,7 @@ const HeroSection = () => {
         onError={() => console.log('❌ Background div error')}
       >
         {/* Fallback background color in case image fails to load */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-gray-700 to-slate-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-orange-500 to-yellow-500" />
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
       </div>
@@ -88,10 +88,9 @@ const HeroSection = () => {
           with Richard
         </h1>
         
-        <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed">
-          Reliable Taxi Service with Richard
-Your trusted driver for safe, comfortable rides around Nairobi and beyond. 
-Airport, office and corporate transfers, city tours, and personalized trips across Kenya.
+        <p className="text-xl md:text-2xl text-white/90 mb-6 max-w-3xl mx-auto leading-relaxed">
+          Reliable Taxi Service with Richard - Your trusted driver for safe, comfortable rides around Nairobi and beyond. 
+          Airport, office and corporate transfers, city tours, and personalized trips across Kenya.
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -113,7 +112,7 @@ Airport, office and corporate transfers, city tours, and personalized trips acro
         </div>
 
         {/* Stats */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
           <div className="text-center">
             <div className="text-3xl font-bold text-primary mb-2">1000+</div>
             <div className="text-white/80">Satisfied Passengers</div>
@@ -130,7 +129,7 @@ Airport, office and corporate transfers, city tours, and personalized trips acro
       </div>
 
       {/* Image Indicators */}
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2">
+      <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {backgroundImages.map((_, index) => (
           <button
             key={index}
@@ -146,8 +145,8 @@ Airport, office and corporate transfers, city tours, and personalized trips acro
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-1 h-16 bg-gradient-to-b from-primary to-transparent rounded-full" />
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="w-1 h-12 bg-gradient-to-b from-primary to-transparent rounded-full" />
       </div>
     </section>
   );

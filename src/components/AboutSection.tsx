@@ -27,48 +27,48 @@ const AboutSection = () => {
   ];
 
   return (
+
     <section className="py-8 md:py-12 bg-secondary/30">
+
+    <section className="py-8 bg-secondary/30">
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Content */}
-          <div>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Why Ride with {" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-safari-sunset">
-                Richard?
-              </span>
-            </h2>
-            
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              As a native Kenyan with over 15 years of driving experience, I don't just get you 
+        <div className="text-center mb-8">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            Why Ride with {" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-safari-sunset">
+              Richard?
+            </span>
+          </h2>
+          
+          <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-3xl mx-auto">
+            As a native Kenyan with over 15 years of driving experience, I don't just get you 
 from A to B – I provide safe, reliable transportation with local expertise. 
 From airport pickups to city tours and cross-country trips, every journey is 
 handled with professionalism and deep local knowledge.
-            </p>
+          </p>
+        </div>
 
-            <div className="grid sm:grid-cols-2 gap-6 mb-8">
-              {features.map((feature, index) => (
-                <Card key={index} className="border-border/50 bg-card/50 backdrop-blur-sm">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="text-primary mt-1">
-                        {feature.icon}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-2">
-                          {feature.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {feature.description}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-          </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
+            <Card key={index} className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="text-primary">
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </section>

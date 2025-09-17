@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useBookingsDjango } from "@/hooks/useBookingsDjango";
 import { BookingData } from "@/lib/api";
 
@@ -34,7 +34,7 @@ const BookTour = () => {
     specialRequests: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const { toast } = useToast();
+  const { toast } = useToast();
   const { createBooking } = useBookingsDjango();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -50,7 +50,13 @@ const BookTour = () => {
     e.preventDefault();
     
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.destination || !formData.groupSize) {
-      // Please fill in all required fields
+
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+
       return;
     }
 
@@ -76,7 +82,13 @@ const BookTour = () => {
         throw new Error(result.error.message);
       }
 
-      // Booking submitted successfully (silent mode: no popup)
+
+
+      toast({
+        title: "Booking Submitted Successfully!",
+        description: "Richard will contact you within 12 hours to confirm your pickup details."
+      });
+
 
       // Reset form
       setFormData({
@@ -93,7 +105,13 @@ const BookTour = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Booking error:', error);
-      // Failed to submit booking request
+
+      toast({
+        title: "Booking Failed",
+        description: "Failed to submit booking request. Please try again or contact Richard directly.",
+        variant: "destructive"
+      });
+
     } finally {
       setIsSubmitting(false);
     }
