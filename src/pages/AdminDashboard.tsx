@@ -57,8 +57,7 @@ const AdminDashboard = () => {
   const handleUpdateBooking = async (id: string, status: string, notes?: string) => {
     await updateBooking(id, { 
       status: status as any, 
-      notes,
-      updated_at: new Date().toISOString()
+      notes
     });
     setEditingBooking(null);
   };
@@ -66,7 +65,14 @@ const AdminDashboard = () => {
   const handleLocationUpload = async () => {
     if (!locationUpload.file || !locationUpload.title) return;
     
-    await uploadLocationImage(locationUpload.file, locationUpload.title, locationUpload.description);
+    const formData = new FormData();
+    formData.append('image', locationUpload.file);
+    formData.append('title', locationUpload.title);
+    if (locationUpload.description) {
+      formData.append('description', locationUpload.description);
+    }
+    
+    await createLocation(formData);
     setLocationUpload({ title: '', description: '', file: null });
   };
 

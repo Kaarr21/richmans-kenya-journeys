@@ -1,9 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
+import { componentTagger } from "lovable-tagger"
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react()],
+  server: {
+    host: "::",
+    port: 8080,
+  },
+  plugins: [
+    react(),
+    mode === 'development' && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -31,10 +39,6 @@ export default defineConfig(({ mode }) => ({
     reportCompressedSize: false
   },
   base: mode === 'production' ? '/static/' : '/',
-  server: {
-    port: 8080,
-    host: '0.0.0.0'
-  },
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
     // Inject environment variables at build time
