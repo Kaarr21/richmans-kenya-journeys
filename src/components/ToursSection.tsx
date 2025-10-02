@@ -1,31 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Camera } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { apiClient, LocationResponse } from "@/lib/api";
+import { useLocations } from "@/hooks/useLocations";
 
 const ToursSection = () => {
-  const [locations, setLocations] = useState<LocationResponse[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { locations, loading } = useLocations();
 
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
-    try {
-      const response = await apiClient.getLocations();
-      setLocations(response.results || []);
-    } catch (error: any) {
-      console.error('Error fetching locations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const displayLocations = locations;
+  const displayLocations = locations || [];
 
   return (
     <section className="py-8 md:py-12 bg-background">

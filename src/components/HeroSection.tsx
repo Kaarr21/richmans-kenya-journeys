@@ -2,49 +2,25 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 
-// High-quality Nairobi CBD background images with fallback system
-const getBackgroundImages = () => {
-  const isProduction = window.location.hostname.includes('onrender.com') || 
-                      window.location.hostname.includes('herokuapp.com') ||
-                      !window.location.hostname.includes('localhost');
-  
-  console.log('🖼️ Environment detection:', {
-    hostname: window.location.hostname,
-    isProduction
-  });
-  
-  const files = [
-    'nairobi-cbd-skyline.jpg',
-    'nairobi-city-center.jpg',
-    'nairobi-business-district.jpg',
-    'nairobi-downtown.jpg'
-  ];
-  return files.map(name => isProduction ? `/static/${name}` : `/${name}`);
-};
-
-const backgroundImages = getBackgroundImages();
-console.log('🖼️ Background images paths:', backgroundImages);
+// High-quality Nairobi CBD background images
+const backgroundImages = [
+  'https://images.unsplash.com/photo-1523805009345-7448845a9e53?w=1920&q=80',
+  'https://images.unsplash.com/photo-1611348524140-53c9a25263d6?w=1920&q=80',
+  'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1920&q=80',
+  'https://images.unsplash.com/photo-1549366021-9f761d450615?w=1920&q=80'
+];
 
 const HeroSection = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    console.log('🖼️ Starting image preload...');
-    
     // Preload all images
-    const preloadImages = backgroundImages.map((src, index) => {
+    backgroundImages.forEach((src) => {
       const img = new Image();
-      img.onload = () => {
-        console.log(`✅ Image ${index + 1} loaded successfully:`, src);
-        setImageLoaded(true);
-      };
-      img.onerror = (error) => {
-        console.error(`❌ Failed to load image ${index + 1}:`, src, error);
-        setImageLoaded(true); // Still set loaded to show fallback
-      };
+      img.onload = () => setImageLoaded(true);
+      img.onerror = () => setImageLoaded(true);
       img.src = src;
-      return img;
     });
 
     // Rotate images every 8 seconds
@@ -64,8 +40,6 @@ const HeroSection = () => {
           backgroundImage: `url(${backgroundImages[currentImageIndex]})`,
           opacity: imageLoaded ? 1 : 0.9,
         }}
-        onLoad={() => console.log('🖼️ Background div loaded')}
-        onError={() => console.log('❌ Background div error')}
       >
         {/* Fallback background color in case image fails to load */}
         <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-orange-500 to-yellow-500" />
