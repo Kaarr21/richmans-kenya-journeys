@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => ({
     target: 'es2020',
     reportCompressedSize: false
   },
-  base: mode === 'production' ? '/static/' : '/',
+  base: '/',
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
     // Inject environment variables at build time
