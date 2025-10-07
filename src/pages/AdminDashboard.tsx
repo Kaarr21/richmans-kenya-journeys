@@ -23,20 +23,19 @@ import {
   Plus,
   Upload
 } from "lucide-react";
-import { useAuthDjango } from "@/hooks/useAuthDjango";
-import { useBookingsDjango } from "@/hooks/useBookingsDjango";
-import { useLocationsDjango } from "@/hooks/useLocationsDjango";
-import { BookingResponse, LocationResponse } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useBookings } from "@/hooks/useBookings";
+import { useLocations } from "@/hooks/useLocations";
 
 type TabType = 'overview' | 'bookings' | 'locations';
 
 const AdminDashboard = () => {
-  const { user, loading: authLoading, signOut } = useAuthDjango();
-  const { bookings, loading: bookingsLoading, updateBooking, deleteBooking } = useBookingsDjango();
-  const { locations, loading: locationsLoading, createLocation, deleteLocation, updateLocation } = useLocationsDjango();
+  const { user, isAdmin, loading: authLoading, signOut } = useAuth();
+  const { bookings, loading: bookingsLoading, updateBooking, deleteBooking } = useBookings();
+  const { locations, loading: locationsLoading, createLocation, deleteLocation, updateLocation } = useLocations();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [editingBooking, setEditingBooking] = useState<BookingResponse | null>(null);
-  const [editingLocation, setEditingLocation] = useState<LocationResponse | null>(null);
+  const [editingBooking, setEditingBooking] = useState<any>(null);
+  const [editingLocation, setEditingLocation] = useState<any>(null);
   const [locationUpload, setLocationUpload] = useState({ title: '', description: '', file: null as File | null });
 
   const getStatusColor = (status: string): string => {
@@ -398,7 +397,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user) {
+  if (!user || !isAdmin) {
     return <AuthPageDjango />;
   }
 

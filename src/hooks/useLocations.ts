@@ -131,11 +131,40 @@ export function useLocations() {
     }
   };
 
+  const updateLocation = async (id: string, updates: { title?: string; description?: string }) => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Location updated successfully!"
+      });
+
+      await fetchLocations();
+      return { data, error: null };
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update location: " + error.message,
+        variant: "destructive"
+      });
+      return { data: null, error };
+    }
+  };
+
   return {
     locations,
     loading,
     fetchLocations,
     createLocation,
+    updateLocation,
     deleteLocation
   };
 }
